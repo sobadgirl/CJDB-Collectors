@@ -1,0 +1,642 @@
+<div class="modal z-[100]"
+     x-data='providerConfigManager({{ provider_catalog|tojson }})'
+     x-init="init()"
+     x-cloak
+     :class="{ 'modal-open': isOpen }"
+     :data-service-type="serviceType"
+     @open-provider-config.window="openFor($event.detail.type, $event.detail.label)"
+     @keydown.escape.window="close()">
+  <div class="modal-box flex max-h-[calc(100dvh-2rem)] w-[min(56rem,calc(100vw-2rem))] max-w-none flex-col overflow-hidden p-0">
+    <div class="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-2">
+          <h3 class="text-lg font-semibold text-slate-950" x-text="serviceLabel"></h3>
+          <span class="inline-flex items-center gap-1.5 text-xs font-medium"
+                :class="statusTextClass(displayStatus(activeProvider))">
+            <span class="size-2 rounded-full" :class="statusClass(displayStatus(activeProvider))"></span>
+            <span x-text="loading
+              ? '获取中'
+              : (error && !activeProvider
+                ? '获取失败'
+                : (activeProvider ? stateText(displayStatus(activeProvider)) : '未选择'))"></span>
+          </span>
+        </div>
+        <p class="mt-1 truncate text-sm text-slate-500"
+           x-text="loading
+             ? '正在获取 Provider'
+             : (activeProvider?.message || (activeProvider ? activeProvider.name : '未选择 Provider'))"></p>
+      </div>
+      <button type="button"
+              class="btn btn-ghost btn-sm btn-square shrink-0"
+              aria-label="关闭"
+              @click="close()">
+        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18"/>
+        </svg>
+      </button>
+    </div>
+
+    <form class="contents" @submit.prevent="save()">
+      <div class="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+        <div class="grid min-h-40 place-items-center" x-show="loading">
+          <span class="loading loading-spinner loading-md text-slate-500"></span>
+        </div>
+
+        <div class="space-y-6" x-show="!loading">
+          <div>
+            <div class="mb-2 text-sm font-medium text-slate-900">Provider</div>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <template x-for="provider in providers" :key="`${serviceType}.${provider.namespace}`">
+                <button type="button"
+                        class="flex min-h-16 w-full min-w-0 items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-colors"
+                        :data-provider-namespace="provider.namespace"
+                        :class="draftProviderNamespace === provider.namespace
+                          ? 'border-slate-900 bg-slate-50'
+                          : 'border-slate-200 bg-white hover:border-slate-400'"
+                        :aria-pressed="draftProviderNamespace === provider.namespace"
+                        @click="chooseProvider(provider)">
+                  <span class="min-w-0 flex-1">
+                    <span class="flex items-center gap-2">
+                      <span class="size-2.5 shrink-0 rounded-full"
+                            :class="statusClass(displayStatus(provider))"></span>
+                      <span class="truncate font-medium text-slate-900" x-text="provider.name"></span>
+                    </span>
+                    <span class="mt-1 block truncate text-xs text-slate-500"
+                          x-text="provider.message || stateText(displayStatus(provider))"></span>
+                  </span>
+                  <span class="badge badge-sm shrink-0"
+                        x-show="selectedProviderNamespace === provider.namespace">当前</span>
+                </button>
+              </template>
+            </div>
+            <div class="rounded-lg border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400"
+                 x-show="!providers.length">
+              这个服务没有可用的 Provider
+            </div>
+          </div>
+
+          <div x-show="activeProvider">
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <div class="text-sm font-medium text-slate-900">配置参数</div>
+                <div class="mt-0.5 text-xs text-slate-500" x-text="activeProvider?.name"></div>
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <template x-for="parameter in activeProvider?.parameters || []" :key="parameter.key">
+                <label class="block min-w-0 space-y-1.5">
+                  <span class="block text-sm font-medium text-slate-800">
+                    <span x-text="parameter.label || parameter.key"></span>
+                    <span class="text-red-500" x-show="parameter.required">*</span>
+                  </span>
+
+                  <template x-if="parameter.type === 'password'">
+                    <div class="join flex w-full">
+                      <input class="input input-bordered join-item min-w-0 flex-1"
+                             :type="isPasswordVisible(parameter) ? 'text' : 'password'"
+                             :name="parameter.key"
+                             :placeholder="passwordPlaceholder(parameter)"
+                             :required="parameter.required && !parameterConfigured(parameter)"
+                             autocomplete="off"
+                             x-model="formValues[parameter.key]">
+                      <button class="btn join-item btn-square" type="button"
+                              :aria-label="isPasswordVisible(parameter) ? '隐藏密码' : '显示密码'"
+                              @click="togglePassword(parameter)">
+                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                          <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
+                          <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </template>
+
+                  <template x-if="parameter.type === 'single_select'">
+                    <select class="select select-bordered w-full"
+                            :name="parameter.key"
+                            :required="parameter.required"
+                            x-model="formValues[parameter.key]">
+                      <template x-for="option in parameter.options || []" :key="option.value">
+                        <option :value="option.value"
+                                :selected="formValues[parameter.key] === option.value"
+                                x-text="option.label || option.value"></option>
+                      </template>
+                    </select>
+                  </template>
+
+                  <template x-if="parameter.type === 'text'">
+                    <input class="input input-bordered w-full"
+                           :name="parameter.key"
+                           :required="parameter.required"
+                           type="text"
+                           x-model="formValues[parameter.key]">
+                  </template>
+
+                  <template x-if="parameter.type === 'number'">
+                    <input class="input input-bordered w-full"
+                           :name="parameter.key"
+                           :required="parameter.required"
+                           type="number"
+                           step="any"
+                           x-model="formValues[parameter.key]">
+                  </template>
+
+                  <template x-if="parameter.type === 'local_path'">
+                    <div class="join flex w-full">
+                      <input class="input input-bordered join-item min-w-0 flex-1"
+                             :name="parameter.key"
+                             :required="parameter.required"
+                             type="text"
+                             x-model="formValues[parameter.key]">
+                      <button class="btn join-item btn-square"
+                              type="button"
+                              aria-label="使用默认路径"
+                              @click="formValues[parameter.key] = parameter.default || ''">
+                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                          <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </template>
+
+                  <span class="block text-xs leading-5 text-slate-500"
+                        x-show="parameter.help"
+                        x-text="parameter.help"></span>
+                </label>
+              </template>
+            </div>
+            <div class="rounded-lg border border-dashed border-slate-200 px-4 py-4 text-sm text-slate-500"
+                 x-show="activeProvider && !(activeProvider.parameters || []).length">
+              这个 Provider 不需要额外参数
+            </div>
+          </div>
+
+          <div x-show="canShowLogs" class="overflow-hidden rounded-lg border border-slate-200">
+            <div class="flex min-h-11 items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3">
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-slate-800">初始化日志</div>
+                <div class="truncate text-xs text-slate-400" x-text="logPath"></div>
+              </div>
+              <div class="flex shrink-0 items-center gap-1">
+                <button type="button"
+                        class="btn btn-ghost btn-xs"
+                        :disabled="logLoading"
+                        @click="loadLogs(false, true)">刷新</button>
+                <button type="button"
+                        class="btn btn-ghost btn-xs"
+                        x-show="!logFollowing && logLines.length"
+                        @click="scrollLogsToBottom()">最新</button>
+              </div>
+            </div>
+            <div class="relative">
+              <div class="h-48 overflow-y-auto bg-slate-950 p-3 font-mono text-xs leading-5 text-slate-200"
+                   x-ref="logPanel"
+                   @scroll.passive="handleLogScroll($event)">
+                <div class="pb-2 text-center text-slate-500"
+                     x-show="logLoading && logHasMore">正在加载更早日志</div>
+                <template x-for="line in logLines" :key="line.index">
+                  <div class="whitespace-pre-wrap break-all" x-text="line.text || ' '"></div>
+                </template>
+                <div class="grid h-full place-items-center text-slate-500"
+                     x-show="!logLoading && !logLines.length">暂无日志</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-error text-sm" x-show="error">
+            <span x-text="error"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-4 sm:px-6">
+        <span class="min-h-5 text-sm text-slate-500" x-text="message"></span>
+        <div class="ml-auto flex items-center gap-2">
+          <button type="button" class="btn btn-ghost" @click="close()">关闭</button>
+          <button type="button"
+                  class="btn btn-outline border-red-300 text-red-600 hover:border-red-500 hover:bg-red-50"
+                  x-show="settingUp"
+                  :disabled="stoppingSetup"
+                  @click="stopSetup()">
+            <span class="loading loading-spinner loading-sm" x-show="stoppingSetup"></span>
+            <span x-text="stoppingSetup ? '停止中' : '停止'"></span>
+          </button>
+          <button type="submit"
+                  class="btn border-slate-900 bg-slate-900 text-white hover:border-slate-700 hover:bg-slate-700"
+                  :disabled="loading || saving || settingUp || !activeProvider">
+            <span class="loading loading-spinner loading-sm" x-show="saving"></span>
+            <span x-text="saving ? '保存中' : '确定'"></span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-backdrop" @click="close()"></div>
+</div>
+
+<script>
+function providerConfigManager(initialCatalog) {
+  const labels = {
+    douyin_aweme_collect: '抖音数据采集',
+    xiaohongshu_aweme_collect: '小红书数据采集',
+    wechat_channels_aweme_collect: '视频号数据采集',
+    wechat_mp_aweme_collect: '公众号数据采集',
+    xiaohongshu_comment_collect: '小红书评论下载',
+    account_collect: '账号数据采集',
+    video_transcription: '视频转写'
+  };
+
+  return {
+    initialCatalog,
+    isOpen: false,
+    loading: false,
+    saving: false,
+    settingUp: false,
+    stoppingSetup: false,
+    serviceType: '',
+    serviceLabel: '',
+    providers: [],
+    selectedProviderNamespace: '',
+    draftProviderNamespace: '',
+    formValues: {},
+    visiblePasswords: {},
+    message: '',
+    error: '',
+    setupPid: null,
+    setupStartIndex: 0,
+    pollCount: 0,
+    pollTimer: null,
+    logLines: [],
+    logStart: 0,
+    logTotal: 0,
+    logHasMore: false,
+    logLoading: false,
+    logFollowing: true,
+    logPath: '',
+    init() {
+      window.addEventListener('beforeunload', () => this.stopPolling());
+    },
+    get activeProvider() {
+      return this.providers.find((provider) => provider.namespace === this.draftProviderNamespace) || null;
+    },
+    get canShowLogs() {
+      return Boolean(
+        this.activeProvider
+        && this.selectedProviderNamespace
+        && this.activeProvider.namespace === this.selectedProviderNamespace
+      );
+    },
+    async openFor(type, label = '') {
+      if (!type) return;
+      this.stopPolling();
+      this.isOpen = true;
+      this.serviceType = type;
+      this.serviceLabel = label || labels[type] || type;
+      this.providers = [];
+      this.selectedProviderNamespace = '';
+      this.draftProviderNamespace = '';
+      this.formValues = {};
+      this.visiblePasswords = {};
+      this.message = '';
+      this.error = '';
+      this.settingUp = false;
+      this.stoppingSetup = false;
+      this.setupPid = null;
+      this.resetLogs();
+      await this.loadCatalog();
+    },
+    close() {
+      this.stopPolling();
+      this.isOpen = false;
+    },
+    async loadCatalog() {
+      this.loading = true;
+      try {
+        const response = await fetch(
+          `/api/v1/providers?type=${encodeURIComponent(this.serviceType)}`,
+          { headers: { Accept: 'application/json' }, credentials: 'same-origin' }
+        );
+        if (!response.ok) throw new Error(await this.responseError(response));
+        const catalog = await response.json();
+        this.providers = catalog.providers || [];
+        this.selectedProviderNamespace = catalog.selected || '';
+        this.draftProviderNamespace = this.selectedProviderNamespace;
+        if (this.activeProvider) {
+          this.resetForm(this.activeProvider);
+          if (this.activeProvider.status === 'setting_up') {
+            this.settingUp = true;
+            this.setupPid = this.activeProvider.setup_pid || null;
+            this.message = '正在初始化';
+            this.startPolling();
+          }
+          await this.loadLogs(false, true);
+        }
+      } catch (error) {
+        this.error = `加载失败：${error.message}`;
+      } finally {
+        this.loading = false;
+      }
+    },
+    chooseProvider(provider) {
+      this.draftProviderNamespace = provider.namespace;
+      this.message = '';
+      this.error = '';
+      this.resetForm(provider);
+      if (provider.namespace === this.selectedProviderNamespace) {
+        this.loadLogs(false, true);
+      } else {
+        this.resetLogs();
+      }
+    },
+    resetForm(provider) {
+      const values = provider?.configuration || provider?.details?.values || {};
+      const next = {};
+      for (const parameter of provider?.parameters || []) {
+        let value = values[parameter.key] ?? parameter.default ?? '';
+        if (parameter.type === 'password' && value === '***configured***') value = '';
+        next[parameter.key] = value;
+      }
+      this.formValues = next;
+      this.visiblePasswords = {};
+    },
+    payload() {
+      const values = {};
+      for (const parameter of this.activeProvider?.parameters || []) {
+        let value = this.formValues[parameter.key];
+        if (parameter.type === 'password' && value === '') continue;
+        if (parameter.type === 'number' && value !== '') value = Number(value);
+        values[parameter.key] = value;
+      }
+      return values;
+    },
+    async save() {
+      const provider = this.activeProvider;
+      if (!provider || this.saving) return;
+      this.saving = true;
+      this.error = '';
+      this.message = '正在保存';
+      try {
+        if (this.selectedProviderNamespace !== provider.namespace) {
+          const selection = await fetch('/api/v1/providers/selection', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              type: this.serviceType,
+              namespace: provider.namespace
+            })
+          });
+          if (!selection.ok) throw new Error(await this.responseError(selection));
+          this.selectedProviderNamespace = provider.namespace;
+          this.resetLogs();
+          await this.loadLogs(false, true);
+        }
+
+        this.setupStartIndex = this.logTotal;
+        const response = await fetch(
+          `/api/v1/providers/${encodeURIComponent(this.serviceType)}/setup`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ values: this.payload() })
+          }
+        );
+        if (!response.ok) throw new Error(await this.responseError(response));
+        const result = await response.json();
+        this.setupPid = result.setup_pid || null;
+        this.settingUp = true;
+        this.pollCount = 0;
+        this.message = '正在初始化';
+        await this.loadLogs(false, true);
+        this.startPolling();
+        this.notifyStatusChange();
+      } catch (error) {
+        this.error = `保存失败：${error.message}`;
+        this.message = '';
+      } finally {
+        this.saving = false;
+      }
+    },
+    async stopSetup() {
+      if (!this.settingUp || this.stoppingSetup) return;
+      this.stoppingSetup = true;
+      this.error = '';
+      this.message = '正在停止初始化';
+      try {
+        const response = await fetch(
+          `/api/v1/providers/${encodeURIComponent(this.serviceType)}/setup`,
+          {
+            method: 'DELETE',
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin'
+          }
+        );
+        if (!response.ok) throw new Error(await this.responseError(response));
+        const result = await response.json();
+        if (result.status === 'permission_denied') {
+          this.message = '停止失败：没有进程权限';
+        } else {
+          this.settingUp = false;
+          this.setupPid = null;
+          this.message = '已请求停止初始化';
+          this.stopPolling();
+        }
+        await Promise.all([
+          this.refreshStatus(),
+          this.loadLogs(false, true)
+        ]);
+        this.notifyStatusChange();
+      } catch (error) {
+        this.error = `停止失败：${error.message}`;
+      } finally {
+        this.stoppingSetup = false;
+      }
+    },
+    startPolling() {
+      this.stopPolling();
+      this.pollTimer = window.setInterval(async () => {
+        this.pollCount += 1;
+        await Promise.all([
+          this.refreshStatus(),
+          this.loadLogs(false, this.logFollowing)
+        ]);
+        const failed = this.logLines.some(
+          (line) => line.index >= this.setupStartIndex && line.text.includes('设置失败')
+        );
+        if (failed) {
+          this.settingUp = false;
+          this.message = '初始化失败';
+          this.stopPolling();
+        } else if (this.activeProvider?.status === 'ready') {
+          this.settingUp = false;
+          this.message = '初始化完成';
+          this.stopPolling();
+        } else if (this.activeProvider?.status && this.activeProvider.status !== 'setting_up') {
+          this.settingUp = false;
+          this.message = this.activeProvider.message || this.stateText(this.activeProvider.status);
+          this.stopPolling();
+        } else if (this.pollCount >= 240) {
+          this.settingUp = false;
+          this.message = this.activeProvider?.message || '初始化仍在运行，请稍后刷新状态';
+          this.stopPolling();
+        }
+      }, 1500);
+    },
+    stopPolling() {
+      if (this.pollTimer) window.clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    },
+    async refreshStatus() {
+      if (!this.selectedProviderNamespace) return;
+      try {
+        const response = await fetch(
+          `/api/v1/providers/${encodeURIComponent(this.serviceType)}/status`,
+          { headers: { Accept: 'application/json' }, credentials: 'same-origin' }
+        );
+        if (!response.ok) throw new Error(await this.responseError(response));
+        const state = await response.json();
+        const provider = this.providers.find((item) => item.namespace === this.selectedProviderNamespace);
+        if (provider) {
+          const parameters = provider.parameters;
+          const platforms = provider.platforms;
+          Object.assign(provider, state.provider || {}, state, {
+            parameters,
+            platforms,
+            type: this.serviceType
+          });
+        }
+        this.notifyStatusChange(state);
+      } catch (error) {
+        this.message = `状态检查失败：${error.message}`;
+      }
+    },
+    notifyStatusChange(state = null) {
+      window.dispatchEvent(new CustomEvent('provider-status-updated', {
+        detail: { type: this.serviceType, state }
+      }));
+    },
+    resetLogs() {
+      this.logLines = [];
+      this.logStart = 0;
+      this.logTotal = 0;
+      this.logHasMore = false;
+      this.logLoading = false;
+      this.logFollowing = true;
+      this.logPath = '';
+    },
+    async loadLogs(older = false, scrollToBottom = false) {
+      if (!this.selectedProviderNamespace || this.logLoading) return;
+      this.logLoading = true;
+      const panel = this.$refs.logPanel;
+      const previousHeight = panel?.scrollHeight || 0;
+      try {
+        const params = new URLSearchParams({ limit: '200' });
+        if (older && this.logStart > 0) params.set('before', String(this.logStart));
+        const response = await fetch(
+          `/api/v1/providers/${encodeURIComponent(this.serviceType)}/logs?${params}`,
+          { headers: { Accept: 'application/json' }, credentials: 'same-origin' }
+        );
+        if (!response.ok) throw new Error(await this.responseError(response));
+        const data = await response.json();
+        this.logPath = data.path || '';
+        const incoming = data.lines || [];
+        const lastKnown = this.logLines.at(-1)?.index ?? -1;
+        if (data.total <= lastKnown) {
+          this.logLines = incoming;
+        } else {
+          const merged = new Map(this.logLines.map((line) => [line.index, line]));
+          for (const line of incoming) merged.set(line.index, line);
+          this.logLines = Array.from(merged.values()).sort((left, right) => left.index - right.index);
+        }
+        this.logStart = this.logLines[0]?.index ?? 0;
+        this.logTotal = data.total || 0;
+        this.logHasMore = this.logStart > 0;
+        await this.$nextTick();
+        if (older && panel) {
+          panel.scrollTop = panel.scrollHeight - previousHeight;
+        } else if (scrollToBottom || this.logFollowing) {
+          this.scrollLogsToBottom();
+        }
+      } catch (error) {
+        this.message = `日志读取失败：${error.message}`;
+      } finally {
+        this.logLoading = false;
+      }
+    },
+    handleLogScroll(event) {
+      const panel = event.currentTarget;
+      const distance = panel.scrollHeight - panel.scrollTop - panel.clientHeight;
+      this.logFollowing = distance < 32;
+      if (panel.scrollTop < 24 && this.logHasMore && !this.logLoading) {
+        this.loadLogs(true, false);
+      }
+    },
+    scrollLogsToBottom() {
+      this.$nextTick(() => {
+        const panel = this.$refs.logPanel;
+        if (panel) panel.scrollTop = panel.scrollHeight;
+        this.logFollowing = true;
+      });
+    },
+    displayStatus(provider) {
+      if (this.loading) return 'loading';
+      if (
+        this.settingUp
+        && provider
+        && provider.namespace === this.selectedProviderNamespace
+      ) return 'setting_up';
+      return provider?.status || 'unknown';
+    },
+    statusClass(status) {
+      if (status === 'ready') return 'bg-emerald-500';
+      if (status === 'loading') return 'animate-pulse bg-slate-300';
+      if (status === 'setting_up') return 'bg-amber-400';
+      if (status === 'unconfigured') return 'bg-slate-300';
+      if (status === 'unknown') return 'bg-slate-300';
+      return 'bg-red-500';
+    },
+    statusTextClass(status) {
+      if (status === 'ready') return 'text-emerald-700';
+      if (status === 'loading') return 'text-slate-500';
+      if (status === 'setting_up') return 'text-amber-700';
+      if (status === 'unconfigured') return 'text-slate-500';
+      if (status === 'unknown') return 'text-slate-500';
+      return 'text-red-700';
+    },
+    stateText(status) {
+      return {
+        ready: '可用',
+        loading: '获取中',
+        setting_up: '初始化中',
+        unavailable: '不可用',
+        error: '异常',
+        unconfigured: '未配置',
+        unknown: '未检查'
+      }[status] || '未检查';
+    },
+    parameterConfigured(parameter) {
+      return Boolean(
+        this.activeProvider?.details?.configured_parameters?.[parameter.key]
+      );
+    },
+    isPasswordVisible(parameter) {
+      return Boolean(this.visiblePasswords[parameter.key]);
+    },
+    togglePassword(parameter) {
+      this.visiblePasswords[parameter.key] = !this.visiblePasswords[parameter.key];
+    },
+    passwordPlaceholder(parameter) {
+      return this.parameterConfigured(parameter) ? '' : '请输入配置值';
+    },
+    async responseError(response) {
+      try {
+        const payload = await response.json();
+        return payload.error?.message || payload.detail || `HTTP ${response.status}`;
+      } catch {
+        return `HTTP ${response.status}`;
+      }
+    }
+  };
+}
+</script>

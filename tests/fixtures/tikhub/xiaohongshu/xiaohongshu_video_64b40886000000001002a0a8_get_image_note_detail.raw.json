@@ -1,0 +1,438 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/xiaohongshu/app_v2/get_image_note_detail",
+    "params": {
+      "note_id": "64b40886000000001002a0a8",
+      "share_text": "https://www.xiaohongshu.com/explore/64b40886000000001002a0a8?xsec_token=ABjI00ZuOOxuTmhL6KX5w75eBADDR7Btv5KciU8xIpjaA=&xsec_source=pc_feed"
+    }
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "code": 200,
+    "request_id": "76ca7310-4766-402e-84d8-7cf1cda203ce",
+    "message": "Request successful. This request will incur a charge.",
+    "message_zh": "请求成功，本次请求将被计费。",
+    "support": "Discord: https://discord.gg/aMEAS8Xsvz",
+    "time": "2026-07-25 21:39:34",
+    "time_stamp": 1785040774,
+    "time_zone": "America/Los_Angeles",
+    "docs": "https://api.tikhub.io/#/Xiaohongshu-App-V2-API/get_image_note_detail_api_v1_xiaohongshu_app_v2_get_image_note_detail_get",
+    "cache_message": "This response is cached and accessible via the URL below for 24 hours at no extra cost. The cache is for request tracing only — it doesn't affect the API's data freshness and won't be returned through the API again.",
+    "cache_message_zh": "本次响应已缓存，可通过下方 URL 直接查看，有效期 24 小时，访问缓存链接无额外费用。缓存仅用于请求溯源，不影响接口数据的时效性，也不会再次通过接口返回。",
+    "cache_url": "https://cache.tikhub.io/api/v1/cache/public/76ca7310-4766-402e-84d8-7cf1cda203ce?sign=b528a168bb684170b47d81ff8034e6acfe57149b7e0e0128872a8463cc27e5c2",
+    "router": "/api/v1/xiaohongshu/app_v2/get_image_note_detail",
+    "params": {
+      "note_id": "64b40886000000001002a0a8",
+      "share_text": "https://www.xiaohongshu.com/explore/64b40886000000001002a0a8?xsec_token=ABjI00ZuOOxuTmhL6KX5w75eBADDR7Btv5KciU8xIpjaA=&xsec_source=pc_feed"
+    },
+    "data": {
+      "code": 0,
+      "success": true,
+      "data": [
+        {
+          "note_list": [
+            {
+              "ip_location": "Hubei",
+              "user": {
+                "id": "5a8fa15111be1007987bf90f",
+                "red_official_verified": false,
+                "fstatus": "none",
+                "userid": "5a8fa15111be1007987bf90f",
+                "show_red_official_verify_icon": false,
+                "red_official_verify_type": 0,
+                "track_duration": 0,
+                "level": {
+                  "image": ""
+                },
+                "image": "https://sns-avatar-qc.xhscdn.com/avatar/607e7e45357f5a82172217ec.jpg?imageView2/2/w/120/format/jpg",
+                "followed": false,
+                "red_id": "951769599",
+                "nickname": "小临川",
+                "name": "小临川"
+              },
+              "liked": false,
+              "id": "64b40886000000001002a0a8",
+              "feedback_info": {
+                "dislike_status": 0
+              },
+              "has_related_goods": false,
+              "comments_count": 394,
+              "collected": false,
+              "last_update_time": 0,
+              "foot_tags": [],
+              "pre_view_count": -1,
+              "share_code_flag": 0,
+              "biz_map": {},
+              "liked_count": 40757,
+              "head_tags": [],
+              "title": "新疆⛰️旅行真的会让人变漂亮✨",
+              "share_info": {
+                "content": "好喜欢自由的气息 第一次来新疆 随处拍拍都好好看 #我的日常  #随手拍  #来拍照了  #新疆  #旅行  #喀拉峻",
+                "show_wechat_tag": false,
+                "title": "新疆⛰️旅行真的会让人变漂亮",
+                "image": "http://sns-img-bd.xhscdn.com/1000g0082qe01ab8js00g4a1mmmgl3u8fut8qlhg?imageView2/2/w/360/format/jpg/q/75",
+                "block_private_msg": false,
+                "function_entries": [
+                  {
+                    "type": "generate_image"
+                  },
+                  {
+                    "type": "quote_note"
+                  },
+                  {
+                    "type": "copy_link"
+                  },
+                  {
+                    "type": "heat_for_author"
+                  },
+                  {
+                    "type": "video_speed"
+                  },
+                  {
+                    "type": "dislike"
+                  },
+                  {
+                    "type": "report"
+                  },
+                  {
+                    "type": "video_feedback"
+                  }
+                ],
+                "link": "https://www.xiaohongshu.com/discovery/item/64b40886000000001002a0a8?app_platform=ios&app_version=9.31.2&share_from_user_hidden=true&xsec_source=app_share&type=video&xsec_token=CBgz2fbQ6PtdZQV5BKvyKTUMgf-Ikrn3wYgMkzOu6bGxM=&author_share=1",
+                "guide_audited": true,
+                "wechat_share_desc": "@小临川's note\n744 Shares",
+                "is_star": false
+              },
+              "sticky": false,
+              "seeded_count": 0,
+              "need_next_step": false,
+              "content_trans_info": {
+                "strategy": 9
+              },
+              "hash_tag": [
+                {
+                  "record_count": 0,
+                  "tag_hint": "",
+                  "id": "54238001d6e4a979d187678c",
+                  "bizId": "",
+                  "record_emoji": "",
+                  "link": "xhsdiscover://rn/sns-discover/topic/normal?id=5a438da58000860661721424&page_source=note_feed.click_new_big",
+                  "type": "topic",
+                  "record_unit": "",
+                  "current_score": 0,
+                  "name": "我的日常"
+                },
+                {
+                  "record_count": 0,
+                  "tag_hint": "",
+                  "id": "53284e88b4c4d61dde956992",
+                  "bizId": "",
+                  "record_emoji": "",
+                  "link": "xhsdiscover://rn/sns-discover/topic/normal?id=5a438d9e80008606617209db&page_source=note_feed.click_new_big",
+                  "record_unit": "",
+                  "type": "topic",
+                  "current_score": 0,
+                  "name": "随手拍"
+                },
+                {
+                  "record_count": 0,
+                  "id": "5aa266f77642f10b36736a0c",
+                  "tag_hint": "",
+                  "bizId": "",
+                  "record_emoji": "",
+                  "link": "xhsdiscover://rn/sns-discover/topic/normal?id=5aa26759ec9d1376a6b1b915&page_source=note_feed.click_new_big",
+                  "record_unit": "",
+                  "type": "topic",
+                  "current_score": 0,
+                  "name": "来拍照了"
+                },
+                {
+                  "record_count": 0,
+                  "tag_hint": "",
+                  "id": "5bea5f2450fe56000139a517",
+                  "bizId": "",
+                  "record_emoji": "",
+                  "link": "xhsdiscover://rn/sns-discover/topic/normal?id=5bea5f2447d0df0001cc4109&page_source=note_feed.click_new_big",
+                  "type": "topic",
+                  "record_unit": "",
+                  "name": "新疆",
+                  "current_score": 0
+                },
+                {
+                  "record_count": 0,
+                  "tag_hint": "",
+                  "id": "531d0427b4c4d657c9087aaf",
+                  "bizId": "",
+                  "record_emoji": "",
+                  "link": "xhsdiscover://rn/sns-discover/topic/normal?id=5a438da08000860661720c4f&page_source=note_feed.click_new_big",
+                  "type": "topic",
+                  "record_unit": "",
+                  "name": "旅行",
+                  "current_score": 0
+                },
+                {
+                  "record_count": 0,
+                  "id": "5d4cd544000000001700fd92",
+                  "tag_hint": "",
+                  "bizId": "",
+                  "record_emoji": "",
+                  "link": "xhsdiscover://rn/sns-discover/topic/normal?id=5d4cd544dae9ea00017aa295&page_source=note_feed.click_new_big",
+                  "type": "topic",
+                  "record_unit": "",
+                  "name": "喀拉峻",
+                  "current_score": 0
+                },
+                {
+                  "record_count": 0,
+                  "tag_hint": "",
+                  "id": "59bfb2e4092b5b21079e584e",
+                  "bizId": "",
+                  "record_emoji": "",
+                  "link": "xhsdiscover://rn/sns-discover/topic/normal?id=5a438da18000860661720e51&page_source=note_feed.click_new_big",
+                  "type": "topic",
+                  "record_unit": "",
+                  "current_score": 0,
+                  "name": "旅拍"
+                },
+                {
+                  "record_count": 0,
+                  "tag_hint": "",
+                  "id": "5c387026000000000e01d20a",
+                  "bizId": "",
+                  "record_emoji": "",
+                  "link": "xhsdiscover://rn/sns-discover/topic/normal?id=5c38702653f56800010b2a2c&page_source=note_feed.click_new_big",
+                  "type": "topic",
+                  "record_unit": "",
+                  "current_score": 0,
+                  "name": "大自然"
+                }
+              ],
+              "text_language_code": "zh-Hans",
+              "type": "video",
+              "topics": [
+                {
+                  "style": 0,
+                  "id": "54238001d6e4a979d187678c",
+                  "activity_online": false,
+                  "image": "http://ci.xiaohongshu.com/fd75707a-37f8-45ad-b7a7-0feaf36e9cad@r_120w_120h.jpg",
+                  "link": "xhsdiscover://topic/v2/5a438da58000860661721424?page_source=note_feed.click_new_big",
+                  "business_type": 0,
+                  "discuss_num": 0,
+                  "name": "我的日常"
+                }
+              ],
+              "desc": "好喜欢自由的气息\n第一次来新疆\n随处拍拍都好好看\n#我的日常[话题]# #随手拍[话题]# #来拍照了[话题]# #新疆[话题]# #旅行[话题]# #喀拉峻[话题]# #旅拍[话题]# #大自然[话题]#",
+              "countdown": 0,
+              "ats": [],
+              "widgets_groups": [
+                [
+                  "guos_test",
+                  "note_next_step",
+                  "second_jump_bar",
+                  "cooperate_binds",
+                  "note_collection",
+                  "rec_next_infos",
+                  "image_stickers",
+                  "image_filters",
+                  "product_review",
+                  "related_search",
+                  "cooperate_comment_component",
+                  "image_goods_cards",
+                  "ads_goods_cards",
+                  "ads_comment_component",
+                  "goods_card_v2",
+                  "image_template",
+                  "buyable_goods_card_v2",
+                  "ads_engage_bar",
+                  "challenge_card",
+                  "cooperate_engage_bar",
+                  "guide_post",
+                  "pgy_comment_component",
+                  "pgy_engage_bar",
+                  "bar_below_image",
+                  "aigc_collection",
+                  "co_produce",
+                  "widgets_ndb",
+                  "next_note_guide",
+                  "pgy_bbc_exp",
+                  "async_group",
+                  "super_activity",
+                  "widgets_enhance",
+                  "music_player",
+                  "soundtrack_player"
+                ],
+                [
+                  "guos_test",
+                  "vote_stickers",
+                  "bullet_comment_lead",
+                  "note_search_box",
+                  "interact_pk",
+                  "interact_vote",
+                  "guide_heuristic",
+                  "share_to_msg",
+                  "follow_guide",
+                  "note_share_prompt_v1",
+                  "sync_group",
+                  "group_share",
+                  "share_guide_bubble",
+                  "widgets_share",
+                  "guide_navigator"
+                ]
+              ],
+              "use_water_color": false,
+              "enable_brand_lottery": false,
+              "in_censor": false,
+              "mini_program_info": {
+                "title": "@小临川 发了一篇笔记，快点来看吧！",
+                "webpage_url": "https://www.xiaohongshu.com/discovery/item/64b40886000000001002a0a8?xsec_source=app_share&xsec_token=CBgz2fbQ6PtdZQV5BKvyKTUMgf-Ikrn3wYgMkzOu6bGxM=",
+                "thumb": "http://sns-img-bd.xhscdn.com/1000g0082qe01ab8js00g4a1mmmgl3u8fut8qlhg?imageView2/2/w/540/format/jpg/q/75",
+                "share_title": "@小临川 发了一篇笔记，快点来看吧！",
+                "user_name": "gh_52be748ce5b7",
+                "path": "pages/main/home/index?redirect_path=%2Fpages%2Fmain%2Fnote%2Findex%3Fxsec_source%3Dapp_share%26id%3D64b40886000000001002a0a8%26type%3Dvideo%26xsec_token%3DCBgz2fbQ6PtdZQV5BKvyKTUMgf-Ikrn3wYgMkzOu6bGxM%3D",
+                "desc": "好喜欢自由的气息 第一次来新疆 随处拍拍都好好看 #我的日常  #随手拍  #来拍照了  #新疆  #旅行  #喀拉峻"
+              },
+              "api_upgrade": -1,
+              "need_product_review": false,
+              "media_save_config": {
+                "disable_save": false,
+                "disable_watermark": false,
+                "disable_weibo_cover": false
+              },
+              "enable_co_produce": false,
+              "red_envelope_note": false,
+              "native_voice_info": {
+                "md5sum": "4e44da649142935a55c01dc4ff17430d",
+                "desc": "@小临川创作的原声",
+                "subtitle": "小临川的原声",
+                "duration": 17041,
+                "cover": "http://thirdqq.qlogo.cn/ek_qqapp/AQAsjE6JVEdj8K9nvHD8bOib33WVQa90RY2bpbCCIWCSaz4d2xIDUnRNCd8WbRXkz9rFCPTiaSF70DSiamDNdib5uHhluY7UYxSkibgnbCdgiavLjKuDaOgDI/100",
+                "use_count": 17,
+                "optimize_exp_in_use_count": 0,
+                "sound_bg_music_type": 1,
+                "sound_id": "1145238153966117481",
+                "name": "小临川的原声",
+                "url": "http://sns-v8.rednotecdn.com/audio/02e4b40888d3f12501037003895f415c2e_0.wav?sign=96142b9a12d1fb806de5c081281994c2&t=6a658f86"
+              },
+              "shared_count": 744,
+              "images_list": [
+                {
+                  "index": 0,
+                  "fileid": "1000g0082qe01ab8js00g4a1mmmgl3u8fut8qlhg",
+                  "scale_to_large": 4,
+                  "url_multi_level": {
+                    "low": "https://sns-i11.rednotecdn.com/1000g0082qe01ab8js00g4a1mmmgl3u8fut8qlhg?imageView2/2/w/576/format/webp/q/75%7CimageMogr2/strip&redImage/frame/0&ap=1&sc=V_PRV&sign=a94cac9f75f8b8e678d175630cd791f7&t=6a658f86&src=A&origin=0",
+                    "high": "https://sns-i11.rednotecdn.com/1000g0082qe01ab8js00g4a1mmmgl3u8fut8qlhg?imageView2/2/w/576/format/webp/q/75%7CimageMogr2/strip&redImage/frame/0&ap=1&sc=V_PRV&sign=a94cac9f75f8b8e678d175630cd791f7&t=6a658f86&src=A&origin=0",
+                    "medium": "https://sns-i11.rednotecdn.com/1000g0082qe01ab8js00g4a1mmmgl3u8fut8qlhg?imageView2/2/w/576/format/webp/q/75%7CimageMogr2/strip&redImage/frame/0&ap=1&sc=V_PRV&sign=a94cac9f75f8b8e678d175630cd791f7&t=6a658f86&src=A&origin=0"
+                  },
+                  "original": "https://sns-i11.rednotecdn.com/1000g0082qe01ab8js00g4a1mmmgl3u8fut8qlhg?imageView2/2/w/5000/h/5000/format/webp/q/90&ap=1&sc=V_ORG&sign=a94cac9f75f8b8e678d175630cd791f7&t=6a658f86&src=A&origin=0",
+                  "width": 1440,
+                  "longitude": 0,
+                  "latitude": 0,
+                  "url": "https://sns-i11.rednotecdn.com/1000g0082qe01ab8js00g4a1mmmgl3u8fut8qlhg?imageView2/2/w/576/format/webp/q/87%7CimageMogr2/strip&redImage/frame/0&ap=1&sc=V_PRV&sign=a94cac9f75f8b8e678d175630cd791f7&t=6a658f86&src=A&origin=0",
+                  "need_load_original_image": true,
+                  "origin_img": {
+                    "width": 0,
+                    "size": 0,
+                    "height": 0
+                  },
+                  "height": 1920,
+                  "trace_id": "1000g0082qe01ab8js00g4a1mmmgl3u8fut8qlhg",
+                  "text_intention": 0
+                }
+              ],
+              "comment_prompt_config": {
+                "placeholder_short": "Say something...",
+                "placeholder_long": "Share your thoughts...",
+                "forbidden_cmt_type": 0
+              },
+              "may_have_red_packet": false,
+              "has_music": false,
+              "enable_fls_bridge_cards": false,
+              "model_type": "note",
+              "seeded": false,
+              "goods_info": {},
+              "cooperate_binds": [],
+              "view_count": 0,
+              "function_switch": [
+                {
+                  "type": "video_download",
+                  "enable": false,
+                  "reason": "Download disabled by author"
+                },
+                {
+                  "type": "quote_note",
+                  "enable": true
+                },
+                {
+                  "enable": true,
+                  "type": "heat_for_author"
+                }
+              ],
+              "time": 1689520262,
+              "has_co_produce": false,
+              "long_press_share_info": {
+                "content": "",
+                "show_wechat_tag": false,
+                "title": "",
+                "function_entries": [
+                  {
+                    "type": "image_download"
+                  }
+                ],
+                "guide_audited": false,
+                "is_star": false,
+                "block_private_msg": false
+              },
+              "collected_count": 6484,
+              "note_text_press_options": [],
+              "privacy": {
+                "type": 0,
+                "show_tips": false,
+                "nick_names": ""
+              },
+              "enable_fls_related_cards": false,
+              "qq_mini_program_info": {
+                "share_title": "@小临川 发了一篇超赞的笔记，快点来看！",
+                "webpage_url": "https://www.xiaohongshu.com/discovery/item/64b40886000000001002a0a8?xsec_source=app_share&xsec_token=CBgz2fbQ6PtdZQV5BKvyKTUMgf-Ikrn3wYgMkzOu6bGxM=",
+                "thumb": "http://sns-img-bd.xhscdn.com/1000g0082qe01ab8js00g4a1mmmgl3u8fut8qlhg?imageView2/2/w/540/format/jpg/q/75",
+                "title": "@小临川 发了一篇超赞的笔记，快点来看！",
+                "user_name": "gh_66c53d495417",
+                "path": "pages/main/note/index?xsec_source=app_share&id=64b40886000000001002a0a8&type=video&xsec_token=CBgz2fbQ6PtdZQV5BKvyKTUMgf-Ikrn3wYgMkzOu6bGxM=",
+                "desc": "好喜欢自由的气息 第一次来新疆 随处拍拍都好好看 #我的日常  #随手拍  #来拍照了  #新疆  #旅行  #喀拉峻"
+              },
+              "widgets_context": "{\"video\":true,\"origin_video_key\":\"\",\"flags\":{\"sound_track\":true},\"author_id\":\"5a8fa15111be1007987bf90f\",\"author_name\":\"小临川\",\"note_sound_info\":{\"sound_id\":\"1145238153966117481\",\"name\":\"小临川的原声\",\"desc\":\"@小临川创作的原声\",\"duration\":17041,\"url\":\"http://sns-v8.rednotecdn.com/audio/02e4b40888d3f12501037003895f415c2e_0.wav?sign=96142b9a12d1fb806de5c081281994c2&t=6a658f86\",\"use_count\":17,\"subtitle\":\"小临川的原声\",\"sound_bg_music_type\":1,\"cover\":\"http://thirdqq.qlogo.cn/ek_qqapp/AQAsjE6JVEdj8K9nvHD8bOib33WVQa90RY2bpbCCIWCSaz4d2xIDUnRNCd8WbRXkz9rFCPTiaSF70DSiamDNdib5uHhluY7UYxSkibgnbCdgiavLjKuDaOgDI/100\",\"creator\":\"5a8fa15111be1007987bf90f\"},\"q_task_id\":\"\",\"video_rec_bar_info\":\"\",\"share_count\":744}",
+              "liked_users": []
+            }
+          ],
+          "comment_list": [],
+          "model_type": "note",
+          "track_id": "",
+          "user": {
+            "red_official_verified": false,
+            "id": "5a8fa15111be1007987bf90f",
+            "fstatus": "none",
+            "userid": "5a8fa15111be1007987bf90f",
+            "show_red_official_verify_icon": false,
+            "red_official_verify_type": 0,
+            "track_duration": 0,
+            "level": {
+              "image": ""
+            },
+            "image": "https://sns-avatar-qc.xhscdn.com/avatar/607e7e45357f5a82172217ec.jpg?imageView2/2/w/120/format/jpg",
+            "followed": false,
+            "red_id": "951769599",
+            "nickname": "小临川",
+            "name": "小临川"
+          }
+        }
+      ],
+      "msg": "成功",
+      "debug_id": "021b41e0",
+      "debug_info": "gAAAAABqZY-G4ngya0BnUlAFpaj-UiM14gKo_fqokHFz3b_6oxCVdWCYsvXyCkC2P5AkowxFe0aCMX8Vfzj5HfR5NDbryHE83syG7D7_h46ehMGKRzc9wWaMuVSrrq3u1lyiUGD-xJn9uYJIK8FMNGP4iCPEWbSXoC8Wk8HRU5uYW4QcG99I-w8jtovpzSZhM8rDTP4tu66_jQi_hLMYuNIT8EGtyTPwprWCzxvJBrCTK2YElUqH8jqaIc-5BeXtiPEE8hpwcUhc5YFA3draUzQt7la2aBkYoI1oR33OYOfPt6Gqp9TEuWxybkAszZY91ASEPXJQdyo9kvLEfW9Mr66u9RhLLd4xumLplgR6XGRCFeuYmg59fKwNBieW7-bC16plz3LIDgjqhlR5kjk4iqec6ra8z7fVBtp1rdvXEUvikNG6r2NpczbkCxZBr0h6fnjgwKqQLvVw"
+    }
+  }
+}

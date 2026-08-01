@@ -1,0 +1,87 @@
+version: 1
+app:
+  data_dir: .data
+  database_path: .data/cjdb-collectors.db
+  logs_dir: logs
+web:
+  host: 127.0.0.1
+  port: 8000
+worker:
+  scan_interval_seconds: 1
+  idle_scan_interval_seconds: 5
+  terminate_grace_seconds: 10
+worker_tasks:
+  data_collect:
+    process_limit: 4
+    timeout_seconds: 300
+    retry_limit: 3
+    retry_delay_seconds: 30
+  media_download:
+    process_limit: 2
+    timeout_seconds: 1800
+    retry_limit: 3
+    retry_delay_seconds: 30
+  video_transcription:
+    process_limit: 1
+    timeout_seconds: 7200
+    retry_limit: 2
+    retry_delay_seconds: 60
+  comment_collect:
+    process_limit: 4
+    timeout_seconds: 600
+    retry_limit: 3
+    retry_delay_seconds: 30
+  data_sync:
+    process_limit: 2
+    timeout_seconds: 600
+    retry_limit: 3
+    retry_delay_seconds: 30
+providers:
+  selected:
+    douyin_aweme_collect: tikhub
+    xiaohongshu_aweme_collect: tikhub
+    wechat_channels_aweme_collect: tikhub
+    wechat_mp_aweme_collect: tikhub
+    xiaohongshu_comment_collect: tikhub
+    account_collect: http_collector
+    video_transcription: faster_whisper
+  tikhub:
+    api_key: ''
+    base_url: https://api.tikhub.dev
+    timeout_seconds: 30
+  http_collector:
+    api_key: ''
+    base_url: http://localhost:8001
+    timeout_seconds: 10
+  faster_whisper:
+    model: turbo
+    model_dir: ''
+    device: auto
+    language: zh
+stores: {}
+services:
+  transcription:
+    enabled: true
+    engine: faster_whisper
+    active_model: turbo
+    model_dir: ''
+    device: auto
+    compute_type: auto
+    language: zh
+    vad_filter: true
+    word_timestamps: false
+    browse_roots:
+    - ~/Movies
+    - ~/Downloads
+    - .data/media
+    allowed_video_extensions:
+    - avi
+    - flv
+    - m4v
+    - mkv
+    - mov
+    - mp4
+    - mpeg
+    - mpg
+    - ts
+    - webm

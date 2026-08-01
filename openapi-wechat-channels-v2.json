@@ -1,0 +1,1249 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TikHub Douyin/TikTok/Xiaohongshu/Lemon8/Bilibili/Kuaishou/Pipixia/Weibo/WeChat/Instagram/YouTube/Twitter/Threads/Reddit/Zhihu/Temp Mail API - WeChat-Channels-V2-API",
+    "description": "\n----\n\n#### 📋 Release Information/发布信息\n- **🔢 Version/版本**: `V5.3.2`\n- **🕒 Update Time/更新时间**: `2026-06-22`\n- **🖥️ Environment/环境**: `Production`\n- **🔗 Base URL/基础路径**: `https://api.tikhub.io`\n\n#### 🌐 Basic HTTP Setup/基本HTTP设置\n- **📝 HTTP Method/请求方法**: `GET`、`POST`\n- **🔄 Retry on Error/错误重试**: `Max Retry: 3`\n- **⏱️ Timeout/超时**: `>=30s and <=60s`\n- **⚡ Rate Limit/速率限制**: `QPS: 10/Second`\n\n----\n\n📢 **重要提醒：域名访问优化（适用于中国大陆用户）**\n\n由于主域名 `api.tikhub.io` 在中国大陆被长城防火墙拦截，**请中国大陆用户改用新域名进行请求**：\n\n* 🇨🇳 **大陆用户请使用**：`https://api.tikhub.dev`（无需代理，直接可用）\n* 🌍 **非大陆用户继续使用**：`https://api.tikhub.io`\n\n接口路径和参数保持不变，仅需替换域名即可。**请勿跨区使用，会影响访问速度。**\n\n----\n\n#### 🔗 Useful Links / 有用的链接\n\n- 🏡 **Home**: [https://www.tikhub.io](https://www.tikhub.io)\n- 🐙 **GitHub Organization** (代码仓库/Repositories): [https://github.com/TikHub](https://github.com/TikHub)\n- 🛠 **Python SDK V1** (开发套件/SDK): [https://github.com/TikHub/TikHub-API-Python-SDK](https://github.com/TikHub/TikHub-API-Python-SDK)\n- 🛠 **Python SDK V2** (开发套件/SDK): [https://github.com/TikHub/TikHub-API-Python-SDK-V2](https://github.com/TikHub/TikHub-API-Python-SDK-V2)\n- 📥 **Multi-Functional Downloader** (工具/Utilities): [https://github.com/TikHub/TikHub-Multi-Functional-Downloader](https://github.com/TikHub/TikHub-Multi-Functional-Downloader)\n- 🖥️ **API Demo** (示例项目/Demo Project): [https://github.com/TikHub/TikHub-API-Demo](https://github.com/TikHub/TikHub-API-Demo)\n- 📜 **Swagger UI** (接口文档/API Documentation): [https://api.tikhub.io](https://api.tikhub.io)\n- 📚 **Apifox UI** (接口文档/API Documentation): [https://docs.tikhub.io](https://docs.tikhub.io)\n- 🧪 **API Playground** (接口测试/API Testing): [https://app.apifox.com/project/4705614](https://app.apifox.com/project/4705614)\n- 📈 **API Status Monitor** (服务监控/Service Monitoring): [https://monitor.tikhub.io](https://monitor.tikhub.io)\n- 💬 **Discord Server** (客服/Support): [https://discord.gg/aMEAS8Xsvz](https://discord.gg/aMEAS8Xsvz)\n- ✨ **X.com** (更新/Updates): [https://x.com/TikHubio](https://x.com/TikHubio)\n\n----\n\n#### 📝 备注\n- 🌐 TikHub API 是一个多社交媒体数据分析平台，为开发者提供以下数据接口服务，并且还在不断更新中：\n    - 📱 [抖音网页版数据接口](https://api.tikhub.io/#/Douyin-Web-API)\n    - 📱 [抖音App V3数据接口](https://api.tikhub.io/#/Douyin-App-V3-API)\n    - 🔥 [抖音搜索数据接口](https://api.tikhub.io/#/Douyin-Search-API)\n    - 🔥 [抖音热点榜数据接口](https://api.tikhub.io/#/Douyin-Billboard-API)\n    - ⭐ [抖音星图数据接口](https://api.tikhub.io/#/Douyin-Xingtu-API)\n    - ⭐ [抖音星图V2数据接口](https://api.tikhub.io/#/Douyin-Xingtu-V2-API)\n    - 🚀 [抖音DOU+数据接口](https://api.tikhub.io/#/Douyin-DouPlus-API) - （需要用户Cookie，可获取可推广作品列表、视频排行榜等）\n    - 👨‍🎨 [抖音创作者数据接口](https://api.tikhub.io/#/Douyin-Creator-API)\n    - 👨‍🎨 [抖音创作者 V2数据接口](https://api.tikhub.io/#/Douyin-Creator-V2-API) - （需要用户Cookie，可获取作品流量总览等数据）\n    - 📊 [抖音指数数据接口](https://api.tikhub.io/#/Douyin-Index-API) - （关键词指数、达人分析、品牌分析、话题分析）\n    - 🎵 [TikTok网页版数据接口](https://api.tikhub.io/#/TikTok-Web-API)\n    - 🎵 [TikTok App V3数据接口](https://api.tikhub.io/#/TikTok-App-V3-API)\n    - 👨‍🎨 [TikTok创作者数据接口 - 电商](https://api.tikhub.io/#/TikTok-Creator-API)\n    - 🎵 [TikTok数据分析接口 - MCN](https://api.tikhub.io/#/TikTok-Analytics-API)\n    - 🎵 [TikTok商城网页版数据接口](https://api.tikhub.io/#/TikTok-Shop-Web-API)\n    - 🎵 [TikTok广告创意中心数据接口 - Ads](https://api.tikhub.io/#/TikTok-Ads-API)\n    - 🍉 [西瓜视频App V2数据接口](https://api.tikhub.io/#/Xigua-App-V2-API)\n    - 📰 [今日头条网页版数据接口](https://api.tikhub.io/#/Toutiao-Web-API)\n    - 📰 [今日头条App数据接口](https://api.tikhub.io/#/Toutiao-App-API)\n    - 📕 [小红书App V2数据接口 ⭐推荐](https://api.tikhub.io/#/Xiaohongshu-App-V2-API)\n    - 📕 [小红书蒲公英数据接口 🌸](https://api.tikhub.io/#/Xiaohongshu-PGY-API)\n    - 📕 [小红书网页版 V3数据接口](https://api.tikhub.io/#/Xiaohongshu-Web-V3-API)\n    - 🍋 [Lemon8 App数据接口](https://api.tikhub.io/#/Lemon8-App-API)\n    - 📺 [哔哩哔哩网页版数据接口](https://api.tikhub.io/#/Bilibili-Web-API)\n    - 📺 [哔哩哔哩App数据接口](https://api.tikhub.io/#/Bilibili-App-API)\n    - ⚡ [快手网页版数据接口](https://api.tikhub.io/#/Kuaishou-Web-API)\n    - ⚡ [快手 App 数据接口](https://api.tikhub.io/#/Kuaishou-App-API)\n    - 🦐 [皮皮虾 App 数据接口](https://api.tikhub.io/#/PiPiXia-App-API)\n    - 🔄 [微博网页版数据接口](https://api.tikhub.io/#/Weibo-Web-API)\n    - 🔄 [微博网页版 V2数据接口](https://api.tikhub.io/#/Weibo-Web-V2-API)\n    - 🔄 [微博APP数据接口](https://api.tikhub.io/#/Weibo-App-API)\n    - 💬 [微信公众号 V2数据接口](https://api.tikhub.io/#/WeChat-Media-Platform-V2-API)\n    - 📱 [微信视频号 V2数据接口](https://api.tikhub.io/#/WeChat-Channels-V2-API)\n    - 🔍 [微信搜索 V2数据接口](https://api.tikhub.io/#/WeChat-Search-V2-API)\n    - 📸 [Instagram V1数据接口](https://api.tikhub.io/#/Instagram-V1-API)\n    - 📸 [Instagram V2数据接口](https://api.tikhub.io/#/Instagram-V2-API)\n    - 📸 [Instagram V3数据接口](https://api.tikhub.io/#/Instagram-V3-API)\n    - 📹 [YouTube Web数据接口](https://api.tikhub.io/#/YouTube-Web-API)\n    - 📹 [YouTube Web V2数据接口](https://api.tikhub.io/#/YouTube-Web-V2-API)\n    - 🐦 [Twitter Web数据接口](https://api.tikhub.io/#/Twitter-Web-API)\n    - 🧵 [Threads Web数据接口](https://api.tikhub.io/#/Threads-Web-API)\n    - 🔴 [Reddit APP数据接口](https://api.tikhub.io/#/Reddit-APP-API)\n    - 💼 [LinkedIn Web数据接口](https://api.tikhub.io/#/LinkedIn-Web-API)\n    - 💼 [LinkedIn Web V2数据接口](https://api.tikhub.io/#/LinkedIn-Web-V2-API)\n    - ❓ [知乎Web数据接口](https://api.tikhub.io/#/Zhihu-Web-API)\n    - ✉️ [临时邮箱接口](https://api.tikhub.io/#/Temp-Mail-API)\n- 📢 请将任何问题或错误报告给[Discord服务器](https://discord.gg/aMEAS8Xsvz)。\n\n#### 👤 用户\n- **🖥️ 官网/用户后台/用户支付**: [TikHub User](https://user.tikhub.io/users/signin)\n\n#### 📢 更新通知\n- **👋 新用户注册**\n  - 请注册并**✅ 验证邮箱**后，才能使用API及购买服务。\n- **💰 支付**\n    - 💸 PayPal 支付：支持 Visa、MasterCard、American Express 等国际信用卡；中国用户可直接使用**任意银联信用/储蓄卡**。付款时**无需注册 PayPal**，请在页面选择「信用卡/借记卡」方式完成支付。\n    - 🪙 Cryptocurrency支付: 支持USDT TRC20 加密货币支付。\n    - 📞 如果以上支付方式无法满足您的需求，请联系我们。\n- **🎁 推荐码**\n    - 您可以将推荐码注册链接发送给朋友。当您和您的朋友都成为付费用户后，双方将各获得2美元的余额（约2000次请求量）。\n    - 🔑 推荐码注册链接在个人主页中查看和生成\n    - ⏱️ 推荐码注册链接有效期为90天\n    - ✅ 使用推荐码的时候要确保您的账户已验证邮箱并且是付费用户\n- **🔑 API Key使用**\n    - 🔐 请在生成API Key后立即保存，因为API Key只会在创建后显示一次。\n    - 🔢 每位用户最多可创建20个API Key。\n- **🆓 API免费试用**\n    - 每个用户注册并且验证邮箱后，可以在用户后台的右上角点击签到按钮，获取免费试用额度，每24小时可以签到一次。\n\n----\n\n#### 🔑 API令牌简介:\n##### 📝 方法一：在请求头中使用API令牌（推荐）\n- **🏷️ 请求头**: `Authorization`\n- **📋 格式**: `Bearer your_token`\n- **📄 示例**: `\"Authorization\": \"Bearer your_token\"`\n- **🖥️ Swagger UI**: 点击页面右上角的`Authorize`按钮或点击要请求的接口旁的 `🔒` 图标，然后直接输入API令牌，无需`Bearer`关键字。\n\n##### 📝 方法二：在Cookie中使用API令牌（不推荐，仅在无法使用方法一时使用）\n- **🍪 Cookie**: `Authorization`\n- **📋 格式**: `Bearer your_token`\n- **📄 示例**: `Authorization=Bearer your_token`\n\n#### 🔑 获取API令牌:\n1. 📝 在TikHub网站注册并登录账户。\n2. 👤 进入用户中心，点击API令牌菜单，创建API令牌。\n3. 📋 复制并在请求头中使用API令牌。\n4. 🔒 保密您的API令牌，仅在请求头中使用。\n\n----\n\n#### 📝 Note\n- 🌐 TikHub API is a multi-social media data analysis platform that provides the following data interface services for developers and is constantly being updated:\n    - 📱 [Douyin Web API](https://api.tikhub.io/#/Douyin-Web-API)\n    - 📱 [Douyin App V3 API](https://api.tikhub.io/#/Douyin-App-V3-API)\n    - 🔥 [Douyin Search API](https://api.tikhub.io/#/Douyin-Search-API)\n    - 🔥 [Douyin Billboard API](https://api.tikhub.io/#/Douyin-Billboard-API)\n    - ⭐ [Douyin Xingtu API](https://api.tikhub.io/#/Douyin-Xingtu-API)\n    - ⭐ [Douyin Xingtu V2 API](https://api.tikhub.io/#/Douyin-Xingtu-V2-API)\n    - 🚀 [Douyin DOU+ API](https://api.tikhub.io/#/Douyin-DouPlus-API) - (Requires user Cookie, promotable item list, video ranking, etc.)\n    - 📊 [Douyin Index API](https://api.tikhub.io/#/Douyin-Index-API) - (Keyword index, daren analysis, brand analysis, topic analysis)\n    - 🎵 [TikTok Web API](https://api.tikhub.io/#/TikTok-Web-API)\n    - 🎵 [TikTok App V3 API](https://api.tikhub.io/#/TikTok-App-V3-API)\n    - 👨‍🎨 [TikTok Creator API - E-commerce](https://api.tikhub.io/#/TikTok-Creator-API)\n    - 🎵 [TikTok Analytics API - MCN](https://api.tikhub.io/#/TikTok-Analytics-API)\n    - 🎵 [TikTok Shop Web API](https://api.tikhub.io/#/TikTok-Shop-Web-API)\n    - 🎵 [TikTok Ads API -Ads](https://api.tikhub.io/#/TikTok-Ads-API)\n    - 🍉 [Xigua App V2 API](https://api.tikhub.io/#/Xigua-App-V2-API)\n    - 📰 [Toutiao Web API](https://api.tikhub.io/#/Toutiao-Web-API)\n    - 📰 [Toutiao App API](https://api.tikhub.io/#/Toutiao-App-API)\n    - 📕 [Xiaohongshu App V2 API ⭐Recommended](https://api.tikhub.io/#/Xiaohongshu-App-V2-API)\n    - 📕 [Xiaohongshu PGY API 🌸](https://api.tikhub.io/#/Xiaohongshu-PGY-API)\n    - 📕 [Xiaohongshu Web V3 API](https://api.tikhub.io/#/Xiaohongshu-Web-V3-API)\n    - 🍋 [Lemon8 App API](https://api.tikhub.io/#/Lemon8-App-API)\n    - 📺 [Bilibili Web API](https://api.tikhub.io/#/Bilibili-Web-API)\n    - 📺 [Bilibili App API](https://api.tikhub.io/#/Bilibili-App-API)\n    - ⚡ [Kuaishou Web API](https://api.tikhub.io/#/Kuaishou-Web-API)\n    - ⚡ [Kuaishou App API](https://api.tikhub.io/#/Kuaishou-App-API)\n    - 🦐 [PiPiXia App API](https://api.tikhub.io/#/PiPiXia-App-API)\n    - 🔄 [Weibo Web API](https://api.tikhub.io/#/Weibo-Web-API)\n    - 🔄 [Weibo Web V2 API](https://api.tikhub.io/#/Weibo-Web-V2-API)\n    - 🔄 [Weibo APP API](https://api.tikhub.io/#/Weibo-App-API)\n    - 💬 [WeChat MP V2 API](https://api.tikhub.io/#/WeChat-Media-Platform-V2-API)\n    - 📱 [WeChat Channels V2 API](https://api.tikhub.io/#/WeChat-Channels-V2-API)\n    - 🔍 [WeChat Search V2 API](https://api.tikhub.io/#/WeChat-Search-V2-API)\n    - 📸 [Instagram V1 API](https://api.tikhub.io/#/Instagram-V1-API)\n    - 📸 [Instagram V2 API](https://api.tikhub.io/#/Instagram-V2-API)\n    - 📸 [Instagram V3 API](https://api.tikhub.io/#/Instagram-V3-API)\n    - 📹 [YouTube Web API](https://api.tikhub.io/#/YouTube-Web-API)\n    - 📹 [YouTube Web V2 API](https://api.tikhub.io/#/YouTube-Web-V2-API)\n    - 🐦 [Twitter Web API](https://api.tikhub.io/#/Twitter-Web-API)\n    - 🧵 [Threads Web API](https://api.tikhub.io/#/Threads-Web-API)\n    - 🔴 [Reddit APP API](https://api.tikhub.io/#/Reddit-APP-API)\n    - 💼 [LinkedIn Web API](https://api.tikhub.io/#/LinkedIn-Web-API)\n    - 💼 [LinkedIn Web V2 API](https://api.tikhub.io/#/LinkedIn-Web-V2-API)\n    - ❓ [Zhihu Web API](https://api.tikhub.io/#/Zhihu-Web-API)\n    - ✉️ [Temp Mail API](https://api.tikhub.io/#/Temp-Mail-API)\n- 📢 Please report any issues or errors to the [Discord server](https://discord.gg/aMEAS8Xsvz).\n\n#### 👤 Users\n- **🖥️ Official Website/User Dashboard**: [TikHub User](https://user.tikhub.io/users/signin)\n\n#### 📢 Update Notice\n- **👋 New User Registration**\n    - Please register and **✅ verify your email** before using the API and purchasing services.\n- **💰 Payment**\n    - 💸 PayPal Payment: We accept Visa, MasterCard, American Express, and other major cards. If you’re in China, simply use any **UnionPay credit** or debit card. **No PayPal account is needed**—just select the “Credit or Debit Card” option at checkout.\n    - 🪙 Cryptocurrency Payment: Supports USDT TRC20 cryptocurrencies.\n    - 📞 If the above payment methods do not meet your needs, please contact us.\n- **🎁 Referral Code**\n    - You can share your referral link with friends. Once both you and your friend become paid users, each of you will receive $2 in credits (approximately 2,000 requests).\n    - 🔑 The referral code registration link can be viewed and generated on the personal homepage.\n    - ⏱️ The referral code registration link is valid for 90 days.\n    - ✅ When using the referral code, make sure your account has verified the email and is a paid user.\n- **🔑 API Key Usage**\n    - 🔐 Please save the API Key immediately after generating it, as the API Key will only be displayed once after creation.\n    - 🔢 Each user can create up to 20 API Keys.\n- **🆓 API Free Trial**\n    - After registering and verifying your email, you can click the Check-in button in the upper right corner of the user dashboard to get a free trial balance, you can sign in once every 24 hours.\n\n----\n\n#### 🔑 API Token Introduction:\n##### 📝 Method 1: Use API Token in the Request Header (Recommended)\n- **🏷️ Header**: `Authorization`\n- **📋 Format**: `Bearer your_token`\n- **📄 Example**: `\"Authorization\": \"Bearer your_token\"`\n- **🖥️ Swagger UI**: Click on the `Authorize` button in the upper right corner of the page or click the `🔒` icon next to the interface you want to request, and then directly enter the API token without the `Bearer` keyword.\n\n##### 📝 Method 2: Use API Token in the Cookie (Not Recommended, Use Only When Method 1 is Unavailable)\n- **🍪 Cookie**: `Authorization`\n- **📋 Format**: `Bearer your_token`\n- **📄 Example**: `Authorization=Bearer your_token`\n\n#### 🔑 Get API Token:\n1. 📝 Register and log in to your account on the TikHub website.\n2. 👤 Go to the user center, click on the API token menu, and create an API token.\n3. 📋 Copy and use the API token in the request header.\n4. 🔒 Keep your API token confidential and use it only in the request header.\n",
+    "version": "V5.3.2"
+  },
+  "tags": [
+    {
+      "name": "WeChat-Channels-V2-API",
+      "description": "**(微信视频号 V2 数据接口/WeChat-Channels-V2-API data endpoints)**"
+    }
+  ],
+  "paths": {
+    "/api/v1/wechat_channels/v2/fetch_channel_info": {
+      "post": {
+        "tags": [
+          "WeChat-Channels-V2-API"
+        ],
+        "summary": "获取视频号账号信息/Get WeChat Channels Account Info",
+        "description": "# [中文]\n### 用途:\n- 获取指定视频号账号的「更多信息」：基础信息分区（IP 归属地 / 资料所在地 / **视频号 ID**=sph 公开号）+ 认证信息分区（服务单位 / 主体类型 / 互联网新闻信息服务许可证编号 / 服务类别 / 认证时间）。\n- 价格：0.01$/次\n- ⏱️ 由于微信服务器原因，本接口响应较慢，请将客户端请求超时（timeout）设置为 30 秒；timeout 设置过小会造成已扣费但收不到响应的情况。\n### 参数:\n- username: 视频号 finder username（`v2_…@finder` 格式），示例 `v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder`（人民日报）。\n    - 怎么拿到它：\n        - `fetch_video_detail`、`fetch_user_videos` 响应里每个视频对象的 `username` 字段（最常用）\n        - `fetch_channel_id_to_username`：把视频号 ID（`sph…` 短号，如 `sphi9BjV8GK0Zsl`）转成 username\n- raw: 可选，默认 True。True=原始响应；False=精简解析结构。\n### 返回:\n- 视频号账号的基础信息与认证信息\n\n### 响应结构与 JSON Path:\n#### `raw=false`（精简）:\n- 账号 username: `$.data.finder_username`\n- 视频号 ID（sph 短号）: `$.data.channel_id`\n- 分区列表（原样保留分区结构）: `$.data.sections[N].title`、`$.data.sections[N].items[M].title` / `.content`\n- 扁平化后的「标题→内容」字典（最常用）: `$.data.info`，例如 `$.data.info['视频号ID']`、`$.data.info['IP归属地']`、`$.data.info['服务单位']`、`$.data.info['主体类型']`、`$.data.info['互联网新闻信息服务许可证编号']`、`$.data.info['服务类别']`、`$.data.info['认证时间']`\n#### `raw=true`（原始）:\n- 状态码: `$.data.baseResponse.ret`（0=成功）\n- 分区数组（camelCase）: `$.data.sections[N].title`、`$.data.sections[N].items[M].title` / `.content` / `.type` / `.jumpInfo`\n- 对应关系: raw=false 的 `info`/`channel_id` 对应 raw=true 的 `sections[].items[]`（按 title 扁平化、并剥离富文本图片标记）；raw=true **不含** `info` 扁平字典与 `channel_id`，需自行从 sections 提取。\n\n# [English]\n### Purpose:\n- Get the \"More Info\" of a WeChat Channels account: basic info section (IP location / profile location / **Channel ID** = public sph ID) + verification section (service unit / entity type / internet news service license number / service category / verification time).\n- Price: $0.01 per request\n- ⏱️ Due to WeChat server latency, this endpoint responds slowly; please set your client request timeout to 30 seconds — a timeout that is too small may result in being billed without receiving the response.\n### Parameters:\n- username: WeChat Channels finder username (`v2_…@finder` format), e.g. `v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder` (People's Daily).\n    - How to get it:\n        - The `username` field of each video object in `fetch_video_detail` / `fetch_user_videos` responses (most common)\n        - `fetch_channel_id_to_username`: convert a Channel ID (`sph…` short ID, e.g. `sphi9BjV8GK0Zsl`) into a finder username\n- raw: Optional, default True. True=raw response; False=simplified parsed structure.\n### Return:\n- Basic info and verification info of the WeChat Channels account\n\n### Response structure & JSON Path:\n#### `raw=false` (simplified):\n- Account username: `$.data.finder_username`\n- Channel ID (sph short ID): `$.data.channel_id`\n- Section list (original section structure preserved): `$.data.sections[N].title`, `$.data.sections[N].items[M].title` / `.content`\n- Flattened \"title→content\" dict (most useful): `$.data.info`, e.g. `$.data.info['视频号ID']`, `$.data.info['IP归属地']`, `$.data.info['服务单位']`, `$.data.info['主体类型']`, `$.data.info['互联网新闻信息服务许可证编号']`, `$.data.info['服务类别']`, `$.data.info['认证时间']`\n#### `raw=true` (raw):\n- Status code: `$.data.baseResponse.ret` (0=success)\n- Section array (camelCase): `$.data.sections[N].title`, `$.data.sections[N].items[M].title` / `.content` / `.type` / `.jumpInfo`\n- Mapping: `info`/`channel_id` of raw=false correspond to `sections[].items[]` of raw=true (flattened by title with rich-text image markers stripped); raw=true does **not** contain the flattened `info` dict or `channel_id`, extract them from sections yourself.",
+        "operationId": "fetch_channel_info_api_v1_wechat_channels_v2_fetch_channel_info_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchChannelInfoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wechat_channels/v2/fetch_channel_id_to_username": {
+      "post": {
+        "tags": [
+          "WeChat-Channels-V2-API"
+        ],
+        "summary": "视频号ID转finder username/Convert Channel ID to Finder Username",
+        "description": "# [中文]\n### 用途:\n- 把对外可见的视频号 ID（`sph…` 短号）解析成 finder username（`v2_…@finder`）。\n- 拿到 username 后即可调用 `fetch_user_videos`、`fetch_channel_info`、`fetch_user_profile` 等接口。\n- 价格：0.01$/次\n- ⏱️ 由于微信服务器原因，本接口响应较慢，请将客户端请求超时（timeout）设置为 30 秒；timeout 设置过小会造成已扣费但收不到响应的情况。\n### 参数:\n- channel_id: 视频号 ID（`sph…` 短号），示例 `sphi9BjV8GK0Zsl`（人民日报）。要求为 `sph` 开头的短号。\n- raw: 可选，默认 True。True=原始响应；False=精简解析结构。\n### 返回:\n- 解析出的 finder username 及账号昵称、简介\n\n### 响应结构与 JSON Path:\n#### `raw=false`（精简）:\n- 入参回显: `$.data.channel_id`\n- 解析出的 finder username（可直接喂下游接口）: `$.data.username`\n- 账号昵称（已剥离搜索高亮标记）: `$.data.nickname`\n- 账号简介: `$.data.desc`（可能为 null）\n- 未命中时: `$.data.username` 为 null，且带 `$.data.error` 说明\n#### `raw=true`（原始）:\n- 结果分组: `$.data.data[N]`（每组 `type` + `items[]` / `subBoxes[].items[]`）\n- 账号项里的 finder username: `$.data.data[N].items[M].jumpInfo.userName` 或 `$.data.data[N].items[M].noticeParam.finderUsername`\n- 标题 / 简介: `$.data.data[N].items[M].title` / `.desc`\n- 其它: `$.data.query`（回显查询）、`$.data.continueFlag`、`$.data.offset`\n- 对应关系: raw=false 的 `username` / `nickname` / `desc` 即从 raw=true 的 `data[].items[]`（或 `subBoxes[].items[]`）中首个 `@finder` 账号项提取。\n\n# [English]\n### Purpose:\n- Resolve a publicly visible Channel ID (`sph…` short ID) into a finder username (`v2_…@finder`).\n- With the username you can then call `fetch_user_videos`, `fetch_channel_info`, `fetch_user_profile`, etc.\n- Price: $0.01 per request\n- ⏱️ Due to WeChat server latency, this endpoint responds slowly; please set your client request timeout to 30 seconds — a timeout that is too small may result in being billed without receiving the response.\n### Parameters:\n- channel_id: Channel ID (`sph…` short ID), e.g. `sphi9BjV8GK0Zsl` (People's Daily). Must start with `sph`.\n- raw: Optional, default True. True=raw response; False=simplified parsed structure.\n### Return:\n- Resolved finder username plus account nickname and description\n\n### Response structure & JSON Path:\n#### `raw=false` (simplified):\n- Input echo: `$.data.channel_id`\n- Resolved finder username (feed directly into downstream endpoints): `$.data.username`\n- Account nickname (search highlight markers stripped): `$.data.nickname`\n- Account description: `$.data.desc` (may be null)\n- On miss: `$.data.username` is null with an explanation at `$.data.error`\n#### `raw=true` (raw):\n- Result groups: `$.data.data[N]` (each group has `type` + `items[]` / `subBoxes[].items[]`)\n- Finder username inside account items: `$.data.data[N].items[M].jumpInfo.userName` or `$.data.data[N].items[M].noticeParam.finderUsername`\n- Title / description: `$.data.data[N].items[M].title` / `.desc`\n- Others: `$.data.query` (query echo), `$.data.continueFlag`, `$.data.offset`\n- Mapping: `username` / `nickname` / `desc` of raw=false are extracted from the first `@finder` account item in `data[].items[]` (or `subBoxes[].items[]`) of raw=true.",
+        "operationId": "fetch_channel_id_to_username_api_v1_wechat_channels_v2_fetch_channel_id_to_username_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchChannelIdToUsernameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wechat_channels/v2/fetch_user_videos": {
+      "post": {
+        "tags": [
+          "WeChat-Channels-V2-API"
+        ],
+        "summary": "获取视频号用户作品列表/Get WeChat Channels User Videos",
+        "description": "# [中文]\n### 用途:\n- 获取指定视频号账号主页的作品列表。\n- 每个视频带媒体地址 `media`（含 `url` / `url_token` / `full_url` / `decode_key`），可直接下载并解密。\n- 支持翻页获取更多作品。\n- 价格：0.01$/次\n- ⏱️ 由于微信服务器原因，本接口响应较慢，请将客户端请求超时（timeout）设置为 30 秒；timeout 设置过小会造成已扣费但收不到响应的情况。\n- ⚠️ 大整数 ID 精度：响应中的 `id` / `object_nonce_id` 等为 64 位大整数，超出 JavaScript 安全整数范围（2^53-1）。请始终以**字符串**方式接收 / 传递这类 ID（解析 JSON 用 json-bigint 或按文本取值），勿让其经过 JS `Number`。Swagger UI 文档页对超大整数会末位舍入显示，属正常现象，不影响接口实际返回的数据。\n### 参数:\n- username: 视频号 finder username（`v2_…@finder` 格式），示例 `v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder`（人民日报）。来源见 `fetch_channel_info` / `fetch_video_detail` / `fetch_channel_id_to_username` 文档。\n- last_buffer: 可选，翻页游标（base64）。**首页留空**；当响应 `up_continue` 为真时，传上一页响应的 `last_buffer` 取下一页。（base64 含 `+//=` 等字符，故走 body 而非 query。）\n- raw: 可选，默认 True。True=原始响应；False=精简解析结构（推荐做媒体下载）。\n### 返回:\n- 用户作品列表及翻页游标\n\n### 响应结构与 JSON Path:\n#### `raw=false`（精简，推荐）:\n- 顶层: `$.data.username` / `$.data.nickname` / `$.data.count`（本页视频数）/ `$.data.up_continue`（是否有下一页）/ `$.data.last_buffer`（翻页游标）\n- 每个视频 `$.data.videos[N]`（N 为下标）:\n    - `id`（作品 objectId，喂 `fetch_video_detail` / `fetch_video_comments`）: `$.data.videos[N].id`\n    - `object_nonce_id`: `$.data.videos[N].object_nonce_id`\n    - `username` / `nickname` / `title`: `$.data.videos[N].username` 等\n    - 互动计数: `$.data.videos[N].read_count` / `.like_count` / `.fav_count` / `.forward_count` / `.comment_count`\n    - 发布时间: `$.data.videos[N].create_time`\n    - 位置: `$.data.videos[N].location`\n#### `raw=true`（原始）:\n- 状态码: `$.data.baseResponse.ret`\n- 视频数组（注意是 **`object`** 单数，camelCase）: `$.data.object[N]`\n- 翻页: `$.data.upContinueFlag`、`$.data.lastBuffer`（另附别名 `$.data.last_buffer`）\n- 账号资料: `$.data.contact`（昵称/签名/认证 `authInfo` 等）、`$.data.finderUserInfo`\n- 对应关系: raw=false 的 `videos[]` 对应 raw=true 的 `object[]`；`nickname` 取自 `finderUserInfo` / `contact.nickname`。\n\n### 重要提示（视频下载与解密）:\n- 直接访问响应里的 `url` 可能打不开视频页面 —— 微信视频号做了**防盗链**。把 `url` 和 `url_token` 拼成完整 URL 再用任意 HTTP 客户端下载（能打开 = HTTP 200，**不代表能播放**，文件是加密的）。\n- ⚠️ **视频文件加密说明**: 下载的 MP4 若无法播放即为加密文件。请使用接口返回的 `decode_key` 字段和加密视频文件进行解密。\n- ⚠️ **重要**: 微信**每次请求都返回新的加密链接和 `decode_key`**（即使同一视频）。务必保证 `decode_key` 与下载的加密文件来自**同一次 API 响应**，否则解密失败。\n- JSON Path（逐个视频取 —— N 为下标）:\n    - `raw=false`（**推荐做媒体下载**）—— `$.data.videos[N].media` 是单个对象:\n        - 视频 CDN 链接（不带 Token）: `$.data.videos[N].media.url`\n        - 视频 CDN 链接的 Token: `$.data.videos[N].media.url_token`\n        - 拼接好的完整 CDN URL（= url + url_token，可直接用）: `$.data.videos[N].media.full_url`\n        - 视频解密密钥（每次请求都不一样）: `$.data.videos[N].media.decode_key`\n    - `raw=true` —— media 嵌在 `$.data.object[N].objectDesc.media[0]`（camelCase: `url` / `urlToken` / `decodeKey`，完整 URL = `url` + `urlToken`）。做媒体下载建议直接用 `raw=false`，路径更干净。\n- 在线解密工具: https://evil0ctal.github.io/WeChat-Channels-Video-File-Decryption/\n- 可自行部署的解密 API（Docker 一键部署）: https://github.com/Evil0ctal/WeChat-Channels-Video-File-Decryption\n\n# [English]\n### Purpose:\n- Get the video list from a WeChat Channels account's homepage.\n- Each video carries a `media` object (`url` / `url_token` / `full_url` / `decode_key`) ready for download and decryption.\n- Supports pagination for more videos.\n- Price: $0.01 per request\n- ⏱️ Due to WeChat server latency, this endpoint responds slowly; please set your client request timeout to 30 seconds — a timeout that is too small may result in being billed without receiving the response.\n- ⚠️ Large-integer ID precision: IDs such as `id` / `object_nonce_id` in the response are 64-bit big integers beyond JavaScript's safe-integer range (2^53-1). Always receive / pass such IDs as **strings** (parse JSON with json-bigint or read them as text), never through JS `Number`. Swagger UI rounds the trailing digits of huge integers in its docs view — this is expected and does not affect the actual data returned by the API.\n### Parameters:\n- username: WeChat Channels finder username (`v2_…@finder` format), e.g. `v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder` (People's Daily). See `fetch_channel_info` / `fetch_video_detail` / `fetch_channel_id_to_username` docs for how to obtain it.\n- last_buffer: Optional pagination cursor (base64). **Leave empty for the first page**; when `up_continue` in the response is truthy, pass the previous page's `last_buffer` to get the next page. (base64 contains `+//=` characters, hence body instead of query.)\n- raw: Optional, default True. True=raw response; False=simplified parsed structure (recommended for media download).\n### Return:\n- User video list with pagination cursor\n\n### Response structure & JSON Path:\n#### `raw=false` (simplified, recommended):\n- Top level: `$.data.username` / `$.data.nickname` / `$.data.count` (videos on this page) / `$.data.up_continue` (has next page) / `$.data.last_buffer` (pagination cursor)\n- Each video `$.data.videos[N]` (N is the index):\n    - `id` (video objectId, feed into `fetch_video_detail` / `fetch_video_comments`): `$.data.videos[N].id`\n    - `object_nonce_id`: `$.data.videos[N].object_nonce_id`\n    - `username` / `nickname` / `title`: `$.data.videos[N].username` etc.\n    - Interaction counts: `$.data.videos[N].read_count` / `.like_count` / `.fav_count` / `.forward_count` / `.comment_count`\n    - Publish time: `$.data.videos[N].create_time`\n    - Location: `$.data.videos[N].location`\n#### `raw=true` (raw):\n- Status code: `$.data.baseResponse.ret`\n- Video array (note: singular **`object`**, camelCase): `$.data.object[N]`\n- Pagination: `$.data.upContinueFlag`, `$.data.lastBuffer` (alias `$.data.last_buffer` also provided)\n- Account profile: `$.data.contact` (nickname/signature/`authInfo` etc.), `$.data.finderUserInfo`\n- Mapping: `videos[]` of raw=false corresponds to `object[]` of raw=true; `nickname` comes from `finderUserInfo` / `contact.nickname`.\n\n### Important Note (video download & decryption):\n- Accessing the `url` field directly may fail to open the video page — WeChat Channels uses **anti-hotlinking**. Concatenate `url` and `url_token` into a full URL and download via any HTTP client (opening = HTTP 200, **does not mean playable**, the file is encrypted).\n- ⚠️ **Video Encryption Notice**: If the downloaded MP4 cannot be played, it is encrypted. Use the `decode_key` field from the response together with the encrypted file to decrypt it.\n- ⚠️ **Important**: WeChat returns a **new encrypted link and `decode_key` on every request** (even for the same video). Make sure the `decode_key` and the downloaded encrypted file come from the **same API response**, otherwise decryption will fail.\n- JSON Path (per video — N is the index):\n    - `raw=false` (**recommended for media download**) — `$.data.videos[N].media` is a single object:\n        - Video CDN link (without Token): `$.data.videos[N].media.url`\n        - Token of the video CDN link: `$.data.videos[N].media.url_token`\n        - Pre-concatenated full CDN URL (= url + url_token, ready to use): `$.data.videos[N].media.full_url`\n        - Video decryption key (different on every request): `$.data.videos[N].media.decode_key`\n    - `raw=true` — media is nested at `$.data.object[N].objectDesc.media[0]` (camelCase: `url` / `urlToken` / `decodeKey`, full URL = `url` + `urlToken`). For media download, prefer `raw=false` for cleaner paths.\n- Online decryption tool: https://evil0ctal.github.io/WeChat-Channels-Video-File-Decryption/\n- Self-deployable decryption API (one-click Docker deployment): https://github.com/Evil0ctal/WeChat-Channels-Video-File-Decryption",
+        "operationId": "fetch_user_videos_api_v1_wechat_channels_v2_fetch_user_videos_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchUserVideosRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wechat_channels/v2/fetch_video_detail": {
+      "post": {
+        "tags": [
+          "WeChat-Channels-V2-API"
+        ],
+        "summary": "获取视频号作品详情/Get WeChat Channels Video Detail",
+        "description": "# [中文]\n### 用途:\n- 获取视频号作品详情，返回作品完整详情（媒体地址 `media` + `decode_key`）。\n- 支持三种入参，**三选一、优先级 object_id > export_id > share_url**。\n- 价格：0.01$/次\n- ⏱️ 由于微信服务器原因，本接口响应较慢，请将客户端请求超时（timeout）设置为 30 秒；timeout 设置过小会造成已扣费但收不到响应的情况。\n- ⚠️ 大整数 ID 精度：响应中的 `id` 等为 64 位大整数，超出 JavaScript 安全整数范围（2^53-1）。请始终以**字符串**方式接收 / 传递这类 ID（解析 JSON 用 json-bigint 或按文本取值），勿让其经过 JS `Number`。Swagger UI 文档页对超大整数会末位舍入显示，属正常现象，不影响接口实际返回的数据。\n### 参数:\n- object_id: 最优先，可选。作品 objectId（纯数字），示例 `14941130915890399732`。可从 `fetch_user_videos` / `fetch_collection_videos` 的视频 `id` 获取。\n- export_id: 其次，可选。搜索结果里的 `exportId`（须以 `export/` 开头）。搜索返回的视频项往往只有 `exportId`、没有明文 object_id —— 此时直接传 export_id（会过期，需尽快用）。\n- object_nonce_id: 可选。搜索结果里的 `feedNonceId`（纯数字），搭配上面两者提升命中率。\n- share_url: 最后，可选。视频号分享短链（`https://weixin.qq.com/sph/…`），示例 `https://weixin.qq.com/sph/AH3sCoIPhH`。仅在 object_id 与 export_id 都为空时使用。\n- raw: 可选，默认 True。True=原始响应；False=精简解析结构（推荐做媒体下载）。\n- 三者须至少传一个；`share_url` 需为视频号分享短链（`https://weixin.qq.com/sph/…`）。\n### 返回:\n- 作品完整详情（含媒体下载地址与解密密钥）\n\n### 典型链路（从作品到账号 / 更多作品）:\n1. 本接口 `fetch_video_detail` → 响应含明文 `id`（objectId）、`username`（`v2_…@finder`）、`media`（`url` / `url_token` / `decode_key`）\n2. 拿到的 `username` 再喂 → `fetch_channel_info`（账号资料 / 认证）、`fetch_user_videos`（该号更多作品）、`fetch_user_profile`（主页统计）、`fetch_video_comments`（本视频评论，用第 1 步的 `id`）\n\n### 响应结构与 JSON Path:\n#### `raw=false`（精简，推荐）:\n- `data` 即单个视频对象:\n    - `id`（作品 objectId）: `$.data.id`\n    - `username`（`v2_…@finder`）/ `nickname` / `title`: `$.data.username` 等\n    - 互动计数: `$.data.read_count` / `.like_count` / `.fav_count` / `.forward_count` / `.comment_count`\n    - 发布时间 / 类型 / 位置: `$.data.create_time` / `$.data.object_type` / `$.data.location`\n    - 媒体对象: `$.data.media`（见下方下载/解密）\n#### `raw=true`（原始）:\n- 状态码: `$.data.baseResponse.ret`\n- 命中回执: `$.data.objectResponses[0].objectId` / `.exportId`\n- 视频对象（**注意是 `objects` 复数**，camelCase）: `$.data.objects[0]`\n- 对应关系: raw=false 的扁平字段对应 raw=true 的 `objects[0]`。\n\n### 重要提示（视频下载与解密）:\n- 直接访问响应返回的 `url` 字段可能无法正确打开视频页面 —— 微信对视频号页面做了**防盗链**处理。把 `url` 和 `url_token` 拼成一个完整 URL 再在浏览器 / HTTP 客户端打开。（注：能打开 = HTTP 200，**不代表视频能正常播放**，因为视频文件是加密的。）\n- ⚠️ **视频文件加密说明**: MP4 无法播放即为加密。请使用接口返回的 `decode_key` 字段和加密视频文件进行解密。\n- ⚠️ **重要**: 微信接口**每次请求都会返回新的加密文件链接和 `decode_key`**，即使是同一个视频。请确保用于解密的 `decode_key` 与下载的加密视频文件来自**同一次 API 响应**，否则解密会失败。\n- JSON Path（区分 raw）:\n    - `raw=false`（推荐做媒体下载）—— `$.data.media` 是单个对象:\n        - 视频 CDN 链接（不带 Token）: `$.data.media.url`\n        - 视频 CDN 链接的 Token: `$.data.media.url_token`\n        - 拼接好的完整 CDN URL（= `url` + `url_token`，可直接用）: `$.data.media.full_url`\n        - 视频解密密钥（每次请求都不一样）: `$.data.media.decode_key`\n    - `raw=true` —— `$.data.objects[0].objectDesc.media[0]`:\n        - 视频 CDN 链接（不带 Token）: `$.data.objects[0].objectDesc.media[0].url`\n        - Token: `$.data.objects[0].objectDesc.media[0].urlToken`\n        - 完整 URL = `url` + `urlToken`（拼接）\n        - 视频解密密钥: `$.data.objects[0].objectDesc.media[0].decodeKey`\n- 在线解密工具: https://evil0ctal.github.io/WeChat-Channels-Video-File-Decryption/\n- 可自行部署的解密 API（Docker 一键部署）: https://github.com/Evil0ctal/WeChat-Channels-Video-File-Decryption\n\n# [English]\n### Purpose:\n- Get the full detail of a WeChat Channels video (media address `media` + `decode_key`).\n- Three input options, **choose one, priority object_id > export_id > share_url**.\n- Price: $0.01 per request\n- ⏱️ Due to WeChat server latency, this endpoint responds slowly; please set your client request timeout to 30 seconds — a timeout that is too small may result in being billed without receiving the response.\n- ⚠️ Large-integer ID precision: IDs such as `id` in the response are 64-bit big integers beyond JavaScript's safe-integer range (2^53-1). Always receive / pass such IDs as **strings** (parse JSON with json-bigint or read them as text), never through JS `Number`. Swagger UI rounds the trailing digits of huge integers in its docs view — this is expected and does not affect the actual data returned by the API.\n### Parameters:\n- object_id: Highest priority, optional. Video objectId (numeric), e.g. `14941130915890399732`. Obtainable from the video `id` of `fetch_user_videos` / `fetch_collection_videos`.\n- export_id: Second priority, optional. `exportId` from search results (must start with `export/`). Search results often only carry `exportId` without a plain object_id — pass export_id directly in that case (it expires, use it soon).\n- object_nonce_id: Optional. `feedNonceId` (numeric) from search results, pairs with the above to improve hit rate.\n- share_url: Last, optional. Channels share URL (`https://weixin.qq.com/sph/…`), e.g. `https://weixin.qq.com/sph/AH3sCoIPhH`. Used only when both object_id and export_id are empty.\n- raw: Optional, default True. True=raw response; False=simplified parsed structure (recommended for media download).\n- At least one of the three must be provided; `share_url` must be a Channels share URL (`https://weixin.qq.com/sph/…`).\n### Return:\n- Full video detail (including media download address and decryption key)\n\n### Typical chain (from a video to the account / more videos):\n1. This endpoint `fetch_video_detail` → response contains plain `id` (objectId), `username` (`v2_…@finder`), `media` (`url` / `url_token` / `decode_key`)\n2. Feed the obtained `username` into → `fetch_channel_info` (account info / verification), `fetch_user_videos` (more videos of the account), `fetch_user_profile` (homepage stats), `fetch_video_comments` (comments of this video, using `id` from step 1)\n\n### Response structure & JSON Path:\n#### `raw=false` (simplified, recommended):\n- `data` is a single video object:\n    - `id` (video objectId): `$.data.id`\n    - `username` (`v2_…@finder`) / `nickname` / `title`: `$.data.username` etc.\n    - Interaction counts: `$.data.read_count` / `.like_count` / `.fav_count` / `.forward_count` / `.comment_count`\n    - Publish time / type / location: `$.data.create_time` / `$.data.object_type` / `$.data.location`\n    - Media object: `$.data.media` (see download/decryption below)\n#### `raw=true` (raw):\n- Status code: `$.data.baseResponse.ret`\n- Hit receipt: `$.data.objectResponses[0].objectId` / `.exportId`\n- Video object (**note: plural `objects`**, camelCase): `$.data.objects[0]`\n- Mapping: flat fields of raw=false correspond to `objects[0]` of raw=true.\n\n### Important Note (video download & decryption):\n- Accessing the `url` field directly may fail to open the video page — WeChat applies **anti-hotlinking** to Channels pages. Concatenate `url` and `url_token` into a complete URL, then open it in a browser / HTTP client. (Note: opening = HTTP 200, **does not mean playable**, the video file is encrypted.)\n- ⚠️ **Video Encryption Notice**: If the MP4 cannot be played, it is encrypted. Use the `decode_key` field from the response together with the encrypted video file to decrypt it.\n- ⚠️ **Important**: The WeChat API returns a **new encrypted file link and `decode_key` on every request**, even for the same video. Make sure the `decode_key` used for decryption and the downloaded encrypted file come from the **same API response**, otherwise decryption will fail.\n- JSON Path (by raw):\n    - `raw=false` (recommended for media download) — `$.data.media` is a single object:\n        - Video CDN link (without Token): `$.data.media.url`\n        - Token of the video CDN link: `$.data.media.url_token`\n        - Pre-concatenated full CDN URL (= `url` + `url_token`, ready to use): `$.data.media.full_url`\n        - Video decryption key (different on every request): `$.data.media.decode_key`\n    - `raw=true` — `$.data.objects[0].objectDesc.media[0]`:\n        - Video CDN link (without Token): `$.data.objects[0].objectDesc.media[0].url`\n        - Token: `$.data.objects[0].objectDesc.media[0].urlToken`\n        - Full URL = `url` + `urlToken` (concatenate)\n        - Video decryption key: `$.data.objects[0].objectDesc.media[0].decodeKey`\n- Online decryption tool: https://evil0ctal.github.io/WeChat-Channels-Video-File-Decryption/\n- Self-deployable decryption API (one-click Docker deployment): https://github.com/Evil0ctal/WeChat-Channels-Video-File-Decryption",
+        "operationId": "fetch_video_detail_api_v1_wechat_channels_v2_fetch_video_detail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchVideoDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wechat_channels/v2/fetch_video_comments": {
+      "post": {
+        "tags": [
+          "WeChat-Channels-V2-API"
+        ],
+        "summary": "获取视频号作品评论/Get WeChat Channels Video Comments",
+        "description": "# [中文]\n### 用途:\n- 获取作品的一级评论（含 IP 属地 / 点赞数）；传 `comment_id` 则返回该评论下的二级回复。\n- 支持翻页获取更多评论。\n- 价格：0.01$/次\n- ⏱️ 由于微信服务器原因，本接口响应较慢，请将客户端请求超时（timeout）设置为 30 秒；timeout 设置过小会造成已扣费但收不到响应的情况。\n- ⚠️ 大整数 ID 精度：响应中的 `comment_id` 等为 64 位大整数，超出 JavaScript 安全整数范围（2^53-1）。请始终以**字符串**方式接收 / 传递这类 ID（解析 JSON 用 json-bigint 或按文本取值），勿让其经过 JS `Number`。Swagger UI 文档页对超大整数会末位舍入显示，属正常现象，不影响接口实际返回的数据。\n### 参数:\n- object_id: 作品 objectId（纯数字），示例 `14941130915890399732`。来自 `fetch_user_videos` / `fetch_video_detail` 的视频 `id`。\n- last_buffer: 可选，翻页游标（base64）。**首页留空**；当响应 `down_continue` 为真时传上一页的 `last_buffer`。\n- comment_id: 可选。展开某条评论的二级回复时传该评论的 `comment_id`（纯数字）；首页留空。\n- raw: 可选，默认 True。True=原始响应；False=精简解析结构。\n### 返回:\n- 评论列表及翻页游标\n\n### 响应结构与 JSON Path:\n#### `raw=false`（精简）:\n- 顶层: `$.data.object_id`（回显）/ `$.data.comment_id`（展开回复时回显，否则 null）/ `$.data.count`（本页评论数）/ `$.data.down_continue`（是否有下一页）/ `$.data.last_buffer`（翻页游标）\n- 每条评论 `$.data.comments[N]`:\n    - 评论 ID（展开其二级回复时回传）: `$.data.comments[N].comment_id`\n    - 评论人: `$.data.comments[N].nickname` / `.username` / `.head_url`\n    - 正文: `$.data.comments[N].content`\n    - 点赞 / 回复数: `$.data.comments[N].like_count` / `.reply_count`\n    - 时间 / IP 属地: `$.data.comments[N].create_time` / `.ip_region`\n#### `raw=true`（原始）:\n- 状态码: `$.data.baseResponse.ret`\n- 评论数组（camelCase）: `$.data.commentInfo[N]`，关键字段 `commentId` / `nickname` / `username` / `content` / `likeCount` / `createtime` / `headUrl` / `ipRegionInfo.regionText`\n- 翻页: `$.data.downContinueFlag`、`$.data.lastBuffer`（另附别名 `$.data.last_buffer`）\n- 全局计数: `$.data.monotonicData.commentCount.commentCount`、`$.data.countInfo`（likeCount/favCount/forwardCount 等）\n- 对应关系: raw=false 的 `comments[]` 对应 raw=true 的 `commentInfo[]`。\n\n# [English]\n### Purpose:\n- Get first-level comments of a video (with IP region / like count); pass `comment_id` to get second-level replies under that comment.\n- Supports pagination for more comments.\n- Price: $0.01 per request\n- ⏱️ Due to WeChat server latency, this endpoint responds slowly; please set your client request timeout to 30 seconds — a timeout that is too small may result in being billed without receiving the response.\n- ⚠️ Large-integer ID precision: IDs such as `comment_id` in the response are 64-bit big integers beyond JavaScript's safe-integer range (2^53-1). Always receive / pass such IDs as **strings** (parse JSON with json-bigint or read them as text), never through JS `Number`. Swagger UI rounds the trailing digits of huge integers in its docs view — this is expected and does not affect the actual data returned by the API.\n### Parameters:\n- object_id: Video objectId (numeric), e.g. `14941130915890399732`. From the video `id` of `fetch_user_videos` / `fetch_video_detail`.\n- last_buffer: Optional pagination cursor (base64). **Leave empty for the first page**; when `down_continue` is truthy, pass the previous page's `last_buffer`.\n- comment_id: Optional. To expand the replies of a comment, pass its `comment_id` (numeric); leave empty for the first-level page.\n- raw: Optional, default True. True=raw response; False=simplified parsed structure.\n### Return:\n- Comment list with pagination cursor\n\n### Response structure & JSON Path:\n#### `raw=false` (simplified):\n- Top level: `$.data.object_id` (echo) / `$.data.comment_id` (echo when expanding replies, otherwise null) / `$.data.count` (comments on this page) / `$.data.down_continue` (has next page) / `$.data.last_buffer` (pagination cursor)\n- Each comment `$.data.comments[N]`:\n    - Comment ID (pass it back to expand its replies): `$.data.comments[N].comment_id`\n    - Commenter: `$.data.comments[N].nickname` / `.username` / `.head_url`\n    - Content: `$.data.comments[N].content`\n    - Like / reply counts: `$.data.comments[N].like_count` / `.reply_count`\n    - Time / IP region: `$.data.comments[N].create_time` / `.ip_region`\n#### `raw=true` (raw):\n- Status code: `$.data.baseResponse.ret`\n- Comment array (camelCase): `$.data.commentInfo[N]`, key fields `commentId` / `nickname` / `username` / `content` / `likeCount` / `createtime` / `headUrl` / `ipRegionInfo.regionText`\n- Pagination: `$.data.downContinueFlag`, `$.data.lastBuffer` (alias `$.data.last_buffer` also provided)\n- Global counts: `$.data.monotonicData.commentCount.commentCount`, `$.data.countInfo` (likeCount/favCount/forwardCount etc.)\n- Mapping: `comments[]` of raw=false corresponds to `commentInfo[]` of raw=true.",
+        "operationId": "fetch_video_comments_api_v1_wechat_channels_v2_fetch_video_comments_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchVideoCommentsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wechat_channels/v2/fetch_video_share_url": {
+      "post": {
+        "tags": [
+          "WeChat-Channels-V2-API"
+        ],
+        "summary": "生成视频号作品分享链接/Generate WeChat Channels Video Share URL",
+        "description": "# [中文]\n### 用途:\n- 给定作品 `object_id`，返回一条可对外分享的 `weixin.qq.com/sph/…` 短链（与 `fetch_video_detail` 的 `share_url` 入参互为反向）。\n- 价格：0.01$/次\n- ⏱️ 由于微信服务器原因，本接口响应较慢，请将客户端请求超时（timeout）设置为 30 秒；timeout 设置过小会造成已扣费但收不到响应的情况。\n### 参数:\n- object_id: 作品 objectId（纯数字），示例 `14941130915890399732`。来自 `fetch_user_videos` / `fetch_video_detail` 的视频 `id`。\n- raw: 可选，默认 True。True=原始响应；False=精简解析结构。\n### 返回:\n- 作品分享短链\n\n### 响应结构与 JSON Path:\n#### `raw=false`（精简）:\n- 入参回显: `$.data.object_id`\n- 生成的分享短链（可直接喂 `fetch_video_detail` 的 `share_url`）: `$.data.share_url`\n#### `raw=true`（原始）:\n- 状态码: `$.data.baseResponse.ret`\n- 分享短链: `$.data.feedH5Url`\n- 列表形式（批量时逐项）: `$.data.urlList[N].feedH5Url` / `$.data.urlList[N].objectId`\n- 对应关系: raw=false 的 `share_url` 取自 raw=true 的 `feedH5Url`（或 `urlList[0].feedH5Url`），`object_id` 即入参回显。\n\n# [English]\n### Purpose:\n- Given a video `object_id`, return a shareable `weixin.qq.com/sph/…` short link (the inverse of the `share_url` input of `fetch_video_detail`).\n- Price: $0.01 per request\n- ⏱️ Due to WeChat server latency, this endpoint responds slowly; please set your client request timeout to 30 seconds — a timeout that is too small may result in being billed without receiving the response.\n### Parameters:\n- object_id: Video objectId (numeric), e.g. `14941130915890399732`. From the video `id` of `fetch_user_videos` / `fetch_video_detail`.\n- raw: Optional, default True. True=raw response; False=simplified parsed structure.\n### Return:\n- Video share short link\n\n### Response structure & JSON Path:\n#### `raw=false` (simplified):\n- Input echo: `$.data.object_id`\n- Generated share link (feed directly into `share_url` of `fetch_video_detail`): `$.data.share_url`\n#### `raw=true` (raw):\n- Status code: `$.data.baseResponse.ret`\n- Share link: `$.data.feedH5Url`\n- List form (per item when batched): `$.data.urlList[N].feedH5Url` / `$.data.urlList[N].objectId`\n- Mapping: `share_url` of raw=false comes from `feedH5Url` (or `urlList[0].feedH5Url`) of raw=true; `object_id` is the input echo.",
+        "operationId": "fetch_video_share_url_api_v1_wechat_channels_v2_fetch_video_share_url_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchVideoShareUrlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wechat_channels/v2/fetch_user_profile": {
+      "post": {
+        "tags": [
+          "WeChat-Channels-V2-API"
+        ],
+        "summary": "获取视频号账号主页资料+统计/Get WeChat Channels User Profile & Stats",
+        "description": "# [中文]\n### 用途:\n- 获取创作者的主页资料与互动统计。与 `fetch_channel_info`（认证主体 / 许可证）**互补**：本接口给昵称 / 签名 / 头像、粉丝 / 作品 / 获赞 / 收藏 / 转发数、直播时长、IP 属地、合集数、关联公众号等。\n- 价格：0.01$/次\n- ⏱️ 由于微信服务器原因，本接口响应较慢，请将客户端请求超时（timeout）设置为 30 秒；timeout 设置过小会造成已扣费但收不到响应的情况。\n### 参数:\n- username: 视频号 finder username（`v2_…@finder` 格式）。来源：`fetch_video_detail`、`fetch_user_videos` 响应里视频对象的 `username`；或 `fetch_channel_id_to_username` 把 `sph…` 短号转成 username。示例 `v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder`（人民日报）。\n- raw: 可选，默认 True。True=原始响应；False=精简解析结构。\n### 返回:\n- 账号主页资料与互动统计\n\n### 响应结构与 JSON Path:\n#### `raw=false`（精简，snake_case 拍平）:\n- `$.data.username` —— finder username\n- `$.data.nickname` / `$.data.signature` / `$.data.head_url`（头像）/ `$.data.region`（IP 属地，如「北京」）\n- `$.data.fans_count` —— 粉丝数。**注意：部分账号（如人民日报）返回 0**\n- `$.data.feeds_count` —— 作品数（示例 10555）\n- `$.data.like_count` / `$.data.fav_count` / `$.data.forward_count` —— 获赞 / 收藏 / 转发数（部分账号为 0）\n- `$.data.friend_follow_count` —— 好友关注数\n- `$.data.live_duration_hours` —— 累计直播时长（小时）\n- `$.data.original_flag` —— 原创标记\n- `$.data.collection_count` —— 合集数（示例 6；明细走 `fetch_user_collections`）\n- `$.data.verify_desc` —— 认证说明（可能为 null）\n- `$.data.linked_accounts[]` —— 关联公众号 `[{nickname, type}]`（如 `{\"nickname\":\"人民日报\",\"type\":\"公众号\"}`）\n#### `raw=true`（完整原始响应，camelCase 嵌套）:\n- `$.data.contact.nickname` / `.signature` / `.headUrl` → `nickname` / `signature` / `head_url`\n- `$.data.contact.username` → `username`；`$.data.contact.originalFlag` → `original_flag`\n- `$.data.contact.authInfo`（`authProfession` / `authIconType` …）—— 认证信息\n- `$.data.ipRegionInfo.regionText` → `region`\n- `$.data.fansCount` → `fans_count`（同样部分账号为 0）；`$.data.feedsCount` → `feeds_count`\n- `$.data.feedsLikeCount` / `.feedsFavCount` / `.feedsForwardCount` → `like_count` / `fav_count` / `forward_count`\n- `$.data.liveDurationHours` → `live_duration_hours`；`$.data.collectionListInfo.collectionCount` → `collection_count`\n- `$.data.bizInfo.info[]`（`bizNickname` / `serviceTypeName`）→ `linked_accounts[]`\n- 另含 `$.data.object[]`（首屏作品列表）、`$.data.anchorStatInfo`（直播场次统计）、`$.data.lastBuffer` / `$.data.continueFlag`（首屏作品翻页用，本接口只取资料故一般不用）等几十个字段。\n\n# [English]\n### Purpose:\n- Get a creator's homepage profile and interaction stats. **Complementary** to `fetch_channel_info` (verification entity / license): this endpoint provides nickname / signature / avatar, follower / video / like / favorite / forward counts, live duration, IP region, collection count, linked official accounts, etc.\n- Price: $0.01 per request\n- ⏱️ Due to WeChat server latency, this endpoint responds slowly; please set your client request timeout to 30 seconds — a timeout that is too small may result in being billed without receiving the response.\n### Parameters:\n- username: WeChat Channels finder username (`v2_…@finder` format). Source: the `username` field of video objects in `fetch_video_detail` / `fetch_user_videos` responses; or convert a `sph…` short ID via `fetch_channel_id_to_username`. E.g. `v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder` (People's Daily).\n- raw: Optional, default True. True=raw response; False=simplified parsed structure.\n### Return:\n- Account homepage profile and interaction stats\n\n### Response structure & JSON Path:\n#### `raw=false` (simplified, flattened snake_case):\n- `$.data.username` — finder username\n- `$.data.nickname` / `$.data.signature` / `$.data.head_url` (avatar) / `$.data.region` (IP region, e.g. \"北京\")\n- `$.data.fans_count` — follower count. **Note: some accounts (e.g. People's Daily) return 0**\n- `$.data.feeds_count` — video count (e.g. 10555)\n- `$.data.like_count` / `$.data.fav_count` / `$.data.forward_count` — like / favorite / forward counts (0 for some accounts)\n- `$.data.friend_follow_count` — friend-follow count\n- `$.data.live_duration_hours` — accumulated live streaming hours\n- `$.data.original_flag` — original-content flag\n- `$.data.collection_count` — collection count (e.g. 6; details via `fetch_user_collections`)\n- `$.data.verify_desc` — verification description (may be null)\n- `$.data.linked_accounts[]` — linked official accounts `[{nickname, type}]` (e.g. `{\"nickname\":\"人民日报\",\"type\":\"公众号\"}`)\n#### `raw=true` (full raw response, nested camelCase):\n- `$.data.contact.nickname` / `.signature` / `.headUrl` → `nickname` / `signature` / `head_url`\n- `$.data.contact.username` → `username`; `$.data.contact.originalFlag` → `original_flag`\n- `$.data.contact.authInfo` (`authProfession` / `authIconType` …) — verification info\n- `$.data.ipRegionInfo.regionText` → `region`\n- `$.data.fansCount` → `fans_count` (also 0 for some accounts); `$.data.feedsCount` → `feeds_count`\n- `$.data.feedsLikeCount` / `.feedsFavCount` / `.feedsForwardCount` → `like_count` / `fav_count` / `forward_count`\n- `$.data.liveDurationHours` → `live_duration_hours`; `$.data.collectionListInfo.collectionCount` → `collection_count`\n- `$.data.bizInfo.info[]` (`bizNickname` / `serviceTypeName`) → `linked_accounts[]`\n- Also contains dozens of raw fields like `$.data.object[]` (first-screen video list), `$.data.anchorStatInfo` (live session stats), `$.data.lastBuffer` / `$.data.continueFlag` (pagination of the first-screen videos; generally unused here since this endpoint is for profile data).",
+        "operationId": "fetch_user_profile_api_v1_wechat_channels_v2_fetch_user_profile_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchUserProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wechat_channels/v2/fetch_user_collections": {
+      "post": {
+        "tags": [
+          "WeChat-Channels-V2-API"
+        ],
+        "summary": "获取视频号合集列表/Get WeChat Channels User Collections",
+        "description": "# [中文]\n### 用途:\n- 获取创作者主页的「合集」列表。每个合集的 `topic_id` 可传 `fetch_collection_videos` 取该合集内的视频。\n- 价格：0.01$/次\n- ⏱️ 由于微信服务器原因，本接口响应较慢，请将客户端请求超时（timeout）设置为 30 秒；timeout 设置过小会造成已扣费但收不到响应的情况。\n- ⚠️ 大整数 ID 精度：响应中的 `topic_id` 等为 64 位大整数，超出 JavaScript 安全整数范围（2^53-1）。请始终以**字符串**方式接收 / 传递这类 ID（解析 JSON 用 json-bigint 或按文本取值），勿让其经过 JS `Number`。Swagger UI 文档页对超大整数会末位舍入显示，属正常现象，不影响接口实际返回的数据。\n### 参数:\n- username: 视频号 finder username（`v2_…@finder` 格式）。示例 `v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder`（人民日报）。\n- raw: 可选，默认 True。True=原始响应；False=精简解析结构。\n### 返回:\n- 合集列表\n\n### 响应结构与 JSON Path:\n#### `raw=false`（精简，snake_case）:\n- `$.data.username` —— finder username\n- `$.data.count` —— 合集总数（示例 6）\n- `$.data.collections[]` —— 合集数组，逐个（N 为下标）:\n    - `$.data.collections[N].topic_id` —— 合集 ID（纯数字，传 `fetch_collection_videos`，示例 `14616794565351966924`）\n    - `$.data.collections[N].name` —— 合集名（如「早安中国」）\n    - `$.data.collections[N].desc` —— 合集简介（可能为空串）\n    - `$.data.collections[N].cover_url` —— 合集封面\n    - `$.data.collections[N].feed_count` —— 合集内视频数\n    - `$.data.collections[N].topic_type` —— 合集类型（示例 16，与 `fetch_collection_videos` 的 `topic_type` 对应）\n#### `raw=true`（完整原始响应，camelCase）:\n- `$.data.collectionCount` → `count`\n- `$.data.collectionInfo[]` → `collections[]`，逐个:\n    - `$.data.collectionInfo[N].collectionTopicId` → `topic_id`（数字；另有 `collectionTopicIdStr` 字符串别名）\n    - `$.data.collectionInfo[N].collectionName` → `name`\n    - `$.data.collectionInfo[N].collectionDesc` → `desc`\n    - `$.data.collectionInfo[N].coverImgUrl` → `cover_url`\n    - `$.data.collectionInfo[N].feedCount` → `feed_count`\n    - `$.data.collectionInfo[N].collectionTopicType` → `topic_type`\n    - 另含 `lastUpdateTime` / `readCount` / `categoryId` 等原始字段\n- `$.data.lastBuffer` —— 合集列表翻页游标（通常为空，合集数少不需翻页）\n\n# [English]\n### Purpose:\n- Get the \"Collections\" list on a creator's homepage. Pass each collection's `topic_id` to `fetch_collection_videos` to get its videos.\n- Price: $0.01 per request\n- ⏱️ Due to WeChat server latency, this endpoint responds slowly; please set your client request timeout to 30 seconds — a timeout that is too small may result in being billed without receiving the response.\n- ⚠️ Large-integer ID precision: IDs such as `topic_id` in the response are 64-bit big integers beyond JavaScript's safe-integer range (2^53-1). Always receive / pass such IDs as **strings** (parse JSON with json-bigint or read them as text), never through JS `Number`. Swagger UI rounds the trailing digits of huge integers in its docs view — this is expected and does not affect the actual data returned by the API.\n### Parameters:\n- username: WeChat Channels finder username (`v2_…@finder` format). E.g. `v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder` (People's Daily).\n- raw: Optional, default True. True=raw response; False=simplified parsed structure.\n### Return:\n- Collection list\n\n### Response structure & JSON Path:\n#### `raw=false` (simplified, snake_case):\n- `$.data.username` — finder username\n- `$.data.count` — total collections (e.g. 6)\n- `$.data.collections[]` — collection array, per item (N is the index):\n    - `$.data.collections[N].topic_id` — collection ID (numeric, pass to `fetch_collection_videos`, e.g. `14616794565351966924`)\n    - `$.data.collections[N].name` — collection name (e.g. \"早安中国\")\n    - `$.data.collections[N].desc` — collection description (may be empty string)\n    - `$.data.collections[N].cover_url` — collection cover\n    - `$.data.collections[N].feed_count` — number of videos in the collection\n    - `$.data.collections[N].topic_type` — collection type (e.g. 16, matches `topic_type` of `fetch_collection_videos`)\n#### `raw=true` (full raw response, camelCase):\n- `$.data.collectionCount` → `count`\n- `$.data.collectionInfo[]` → `collections[]`, per item:\n    - `$.data.collectionInfo[N].collectionTopicId` → `topic_id` (number; `collectionTopicIdStr` provides a string alias)\n    - `$.data.collectionInfo[N].collectionName` → `name`\n    - `$.data.collectionInfo[N].collectionDesc` → `desc`\n    - `$.data.collectionInfo[N].coverImgUrl` → `cover_url`\n    - `$.data.collectionInfo[N].feedCount` → `feed_count`\n    - `$.data.collectionInfo[N].collectionTopicType` → `topic_type`\n    - Also raw fields like `lastUpdateTime` / `readCount` / `categoryId`\n- `$.data.lastBuffer` — pagination cursor of the collection list (usually empty; few collections, no pagination needed)",
+        "operationId": "fetch_user_collections_api_v1_wechat_channels_v2_fetch_user_collections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchUserCollectionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wechat_channels/v2/fetch_collection_videos": {
+      "post": {
+        "tags": [
+          "WeChat-Channels-V2-API"
+        ],
+        "summary": "获取视频号合集内视频/Get WeChat Channels Collection Videos",
+        "description": "# [中文]\n### 用途:\n- 给定合集 `topic_id`（来自 `fetch_user_collections`），返回该合集内的视频列表。\n- 每个视频带媒体地址 `media`（含 `url` / `url_token` / `decode_key`），可直接下载解密。\n- 支持翻页获取更多视频。\n- 价格：0.01$/次\n- ⏱️ 由于微信服务器原因，本接口响应较慢，请将客户端请求超时（timeout）设置为 30 秒；timeout 设置过小会造成已扣费但收不到响应的情况。\n- ⚠️ 大整数 ID 精度：响应中的 `id` / `topic_id` 等为 64 位大整数，超出 JavaScript 安全整数范围（2^53-1）。请始终以**字符串**方式接收 / 传递这类 ID（解析 JSON 用 json-bigint 或按文本取值），勿让其经过 JS `Number`。Swagger UI 文档页对超大整数会末位舍入显示，属正常现象，不影响接口实际返回的数据。\n### 参数:\n- topic_id: 合集 ID（纯数字，来自 `fetch_user_collections` 的 `topic_id`）。示例 `14616794565351966924`（人民日报「早安中国」合集）。\n- topic: 可选，合集名，提高命中。示例 `早安中国`。\n- username: 可选，创作者 finder username（`v2_…@finder` 格式），提高命中。\n- last_buffer: 可选，翻页游标（base64），**首页留空**；当响应 `down_continue` 为真时，传上一页响应的 `last_buffer` 取下一页。\n- topic_type: 可选，合集类型，默认 16（与 `fetch_user_collections` 里该合集的 `topic_type` 对齐）。\n- raw: 可选，默认 True。True=原始响应；False=精简解析结构（推荐做媒体下载）。\n### 返回:\n- 合集内视频列表及翻页游标\n\n### 响应结构与 JSON Path:\n#### `raw=false`（精简，snake_case，**推荐做媒体下载**）:\n- `$.data.topic_id` / `$.data.title`（合集名）\n- `$.data.total_count` —— 合集总视频数；`$.data.count` —— 本页条数（示例 20）\n- `$.data.videos[]` —— 视频数组，逐个（N 为下标）:\n    - `$.data.videos[N].id` —— 作品 objectId（可喂 `fetch_video_detail` / `fetch_video_comments`）\n    - `$.data.videos[N].username` / `.nickname` / `.title`（可能为 null）/ `.create_time`\n    - `$.data.videos[N].read_count` / `.like_count` / `.fav_count` / `.forward_count` / `.comment_count`\n    - `$.data.videos[N].media` —— 媒体对象（单个），下载 + 解密:\n        - `$.data.videos[N].media.url` —— 视频 CDN 链接（不带 Token）\n        - `$.data.videos[N].media.url_token` —— CDN 链接 Token（防盗链）\n        - `$.data.videos[N].media.full_url` —— 已拼好的完整 CDN URL（= `url` + `url_token`，可直接下载）\n        - `$.data.videos[N].media.decode_key` —— 视频解密密钥（**每次请求都不同**）\n        - 另含 `cover_url` / `duration` / `width` / `height` / `media_type` 等\n- `$.data.down_continue` —— 是否有下一页（1=有）\n- `$.data.last_buffer` —— 翻页游标（传回本接口取下一页）\n#### `raw=true`（完整原始响应，camelCase）:\n- `$.data.totalCount` → `total_count`\n- `$.data.object[]` → `videos[]`（完整视频对象），逐个:\n    - `$.data.object[N].id` → `id`；`$.data.object[N].username` → `username`\n    - 媒体在 `$.data.object[N].objectDesc.media[0]`: `.url` → `url`、`.urlToken` → `url_token`、`.decodeKey` → `decode_key`（`full_url` 为精简层拼接产物，raw 需自行 `url` + `urlToken` 拼接）\n- `$.data.downContinueFlag` → `down_continue`（注意 raw 顶层另有 `continueFlag`，合集翻页以 `downContinueFlag` 为准）\n- `$.data.lastBuffer`（别名 `$.data.last_buffer`）→ `last_buffer`\n\n### 重要提示（视频下载与解密）:\n- 同 `fetch_video_detail`：直接访问 `url` 可能因防盗链打不开，需用 `full_url`（已拼 Token）下载；MP4 不能播即为加密文件，用**同一次响应**的 `decode_key` 解密（每次请求 `decode_key` 都变）。\n- 在线解密工具: https://evil0ctal.github.io/WeChat-Channels-Video-File-Decryption/\n- 可自行部署的解密 API（Docker 一键部署）: https://github.com/Evil0ctal/WeChat-Channels-Video-File-Decryption\n\n# [English]\n### Purpose:\n- Given a collection `topic_id` (from `fetch_user_collections`), return the video list inside that collection.\n- Each video carries a `media` object (`url` / `url_token` / `decode_key`) ready for download and decryption.\n- Supports pagination for more videos.\n- Price: $0.01 per request\n- ⏱️ Due to WeChat server latency, this endpoint responds slowly; please set your client request timeout to 30 seconds — a timeout that is too small may result in being billed without receiving the response.\n- ⚠️ Large-integer ID precision: IDs such as `id` / `topic_id` in the response are 64-bit big integers beyond JavaScript's safe-integer range (2^53-1). Always receive / pass such IDs as **strings** (parse JSON with json-bigint or read them as text), never through JS `Number`. Swagger UI rounds the trailing digits of huge integers in its docs view — this is expected and does not affect the actual data returned by the API.\n### Parameters:\n- topic_id: Collection ID (numeric, from `topic_id` of `fetch_user_collections`). E.g. `14616794565351966924` (People's Daily \"早安中国\" collection).\n- topic: Optional, collection name, improves hit rate. E.g. `早安中国`.\n- username: Optional, creator finder username (`v2_…@finder` format), improves hit rate.\n- last_buffer: Optional pagination cursor (base64), **leave empty for the first page**; when `down_continue` is truthy, pass the previous page's `last_buffer`.\n- topic_type: Optional, collection type, default 16 (align with the collection's `topic_type` from `fetch_user_collections`).\n- raw: Optional, default True. True=raw response; False=simplified parsed structure (recommended for media download).\n### Return:\n- Video list of the collection with pagination cursor\n\n### Response structure & JSON Path:\n#### `raw=false` (simplified, snake_case, **recommended for media download**):\n- `$.data.topic_id` / `$.data.title` (collection name)\n- `$.data.total_count` — total videos in the collection; `$.data.count` — items on this page (e.g. 20)\n- `$.data.videos[]` — video array, per item (N is the index):\n    - `$.data.videos[N].id` — video objectId (feed into `fetch_video_detail` / `fetch_video_comments`)\n    - `$.data.videos[N].username` / `.nickname` / `.title` (may be null) / `.create_time`\n    - `$.data.videos[N].read_count` / `.like_count` / `.fav_count` / `.forward_count` / `.comment_count`\n    - `$.data.videos[N].media` — media object (single), download + decrypt:\n        - `$.data.videos[N].media.url` — video CDN link (without Token)\n        - `$.data.videos[N].media.url_token` — Token of the CDN link (anti-hotlinking)\n        - `$.data.videos[N].media.full_url` — pre-concatenated full CDN URL (= `url` + `url_token`, ready to download)\n        - `$.data.videos[N].media.decode_key` — video decryption key (**different on every request**)\n        - Also `cover_url` / `duration` / `width` / `height` / `media_type` etc.\n- `$.data.down_continue` — has next page (1=yes)\n- `$.data.last_buffer` — pagination cursor (pass back to this endpoint for the next page)\n#### `raw=true` (full raw response, camelCase):\n- `$.data.totalCount` → `total_count`\n- `$.data.object[]` → `videos[]` (full video objects), per item:\n    - `$.data.object[N].id` → `id`; `$.data.object[N].username` → `username`\n    - Media at `$.data.object[N].objectDesc.media[0]`: `.url` → `url`, `.urlToken` → `url_token`, `.decodeKey` → `decode_key` (`full_url` is produced by the simplified layer; for raw, concatenate `url` + `urlToken` yourself)\n- `$.data.downContinueFlag` → `down_continue` (note: raw top level also has `continueFlag`; for collection pagination use `downContinueFlag`)\n- `$.data.lastBuffer` (alias `$.data.last_buffer`) → `last_buffer`\n\n### Important Note (video download & decryption):\n- Same as `fetch_video_detail`: accessing `url` directly may fail due to anti-hotlinking, download via `full_url` (Token already appended); if the MP4 cannot be played it is encrypted, decrypt with the `decode_key` from the **same response** (the `decode_key` changes on every request).\n- Online decryption tool: https://evil0ctal.github.io/WeChat-Channels-Video-File-Decryption/\n- Self-deployable decryption API (one-click Docker deployment): https://github.com/Evil0ctal/WeChat-Channels-Video-File-Decryption",
+        "operationId": "fetch_collection_videos_api_v1_wechat_channels_v2_fetch_collection_videos_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchCollectionVideosRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wechat_channels/v2/fetch_live_history": {
+      "post": {
+        "tags": [
+          "WeChat-Channels-V2-API"
+        ],
+        "summary": "获取视频号直播回放列表/Get WeChat Channels Live History",
+        "description": "# [中文]\n### 用途:\n- 获取创作者的直播回放列表。回放本身就是视频对象，每条带媒体地址 `media`（含 `url` / `url_token` / `decode_key`），可直接下载解密。\n- 支持翻页获取更多回放。\n- 价格：0.01$/次\n- ⏱️ 由于微信服务器原因，本接口响应较慢，请将客户端请求超时（timeout）设置为 30 秒；timeout 设置过小会造成已扣费但收不到响应的情况。\n- ⚠️ 大整数 ID 精度：响应中的 `id` 等为 64 位大整数，超出 JavaScript 安全整数范围（2^53-1）。请始终以**字符串**方式接收 / 传递这类 ID（解析 JSON 用 json-bigint 或按文本取值），勿让其经过 JS `Number`。Swagger UI 文档页对超大整数会末位舍入显示，属正常现象，不影响接口实际返回的数据。\n### 参数:\n- username: 视频号 finder username（`v2_…@finder` 格式）。示例（有直播回放的号）`v2_060000231003b20faec8cae1811ac4d5c702ea32b0771737aa785454f7f8177114cc4d248d66@finder`（虎嗅）。\n- last_buffer: 可选，翻页游标（base64），**首页留空**；当响应 `continue_flag` 为真时，传上一页响应的 `last_buffer` 取下一页。\n- flag: 可选，拉取标志，默认 12。\n- raw: 可选，默认 True。True=原始响应；False=精简解析结构（推荐做媒体下载）。\n### 返回:\n- 直播回放列表及翻页游标\n\n### 响应结构与 JSON Path:\n#### `raw=false`（精简，snake_case，**推荐做媒体下载**）:\n- `$.data.username`\n- `$.data.count` —— 本页条数；`$.data.total_count` —— 回放总数（**无回放时为 0**）\n- `$.data.lives[]` —— 回放数组，每条是一个视频对象（结构同 `fetch_collection_videos` 的 video），逐个（N 为下标）:\n    - `$.data.lives[N].id` —— 回放作品 objectId\n    - `$.data.lives[N].username` / `.nickname` / `.title` / `.create_time`\n    - `$.data.lives[N].like_count` / `.fav_count` / `.forward_count` / `.comment_count` 等计数\n    - `$.data.lives[N].media` —— 媒体对象（单个），下载 + 解密:\n        - `$.data.lives[N].media.url` —— 视频 CDN 链接（不带 Token）\n        - `$.data.lives[N].media.url_token` —— CDN 链接 Token（防盗链）\n        - `$.data.lives[N].media.full_url` —— 已拼好的完整 CDN URL（= `url` + `url_token`，可直接下载）\n        - `$.data.lives[N].media.decode_key` —— 视频解密密钥（**每次请求都不同**）\n- `$.data.continue_flag` —— 是否有下一页（1=有）\n- `$.data.last_buffer` —— 翻页游标（传回本接口取下一页）\n#### `raw=true`（完整原始响应，camelCase）:\n- `$.data.totalCount` → `total_count`\n- `$.data.object[]` → `lives[]`（完整视频对象），逐个媒体在 `$.data.object[N].objectDesc.media[0]`: `.url` → `url`、`.urlToken` → `url_token`、`.decodeKey` → `decode_key`（`full_url` 为精简层拼接产物，raw 需自行 `url` + `urlToken` 拼接）\n- `$.data.continueFlag` → `continue_flag`\n- `$.data.lastBuffer`（别名 `$.data.last_buffer`）→ `last_buffer`\n\n### 重要提示（视频下载与解密）:\n- 同 `fetch_video_detail`：用 `full_url`（已拼 Token）下载，MP4 不能播即加密，用**同一次响应**的 `decode_key` 解密。\n- 某条回放的 `live_id`（直播间维度）可进一步喂 `fetch_live_detail`。\n- 在线解密工具: https://evil0ctal.github.io/WeChat-Channels-Video-File-Decryption/\n- 可自行部署的解密 API（Docker 一键部署）: https://github.com/Evil0ctal/WeChat-Channels-Video-File-Decryption\n\n# [English]\n### Purpose:\n- Get a creator's live replay list. Each replay is itself a video object with a `media` object (`url` / `url_token` / `decode_key`) ready for download and decryption.\n- Supports pagination for more replays.\n- Price: $0.01 per request\n- ⏱️ Due to WeChat server latency, this endpoint responds slowly; please set your client request timeout to 30 seconds — a timeout that is too small may result in being billed without receiving the response.\n- ⚠️ Large-integer ID precision: IDs such as `id` in the response are 64-bit big integers beyond JavaScript's safe-integer range (2^53-1). Always receive / pass such IDs as **strings** (parse JSON with json-bigint or read them as text), never through JS `Number`. Swagger UI rounds the trailing digits of huge integers in its docs view — this is expected and does not affect the actual data returned by the API.\n### Parameters:\n- username: WeChat Channels finder username (`v2_…@finder` format). Example (an account with live replays): `v2_060000231003b20faec8cae1811ac4d5c702ea32b0771737aa785454f7f8177114cc4d248d66@finder` (Huxiu).\n- last_buffer: Optional pagination cursor (base64), **leave empty for the first page**; when `continue_flag` is truthy, pass the previous page's `last_buffer`.\n- flag: Optional fetch flag, default 12.\n- raw: Optional, default True. True=raw response; False=simplified parsed structure (recommended for media download).\n### Return:\n- Live replay list with pagination cursor\n\n### Response structure & JSON Path:\n#### `raw=false` (simplified, snake_case, **recommended for media download**):\n- `$.data.username`\n- `$.data.count` — items on this page; `$.data.total_count` — total replays (**0 when none**)\n- `$.data.lives[]` — replay array, each item is a video object (same shape as videos of `fetch_collection_videos`), per item (N is the index):\n    - `$.data.lives[N].id` — replay video objectId\n    - `$.data.lives[N].username` / `.nickname` / `.title` / `.create_time`\n    - `$.data.lives[N].like_count` / `.fav_count` / `.forward_count` / `.comment_count` etc.\n    - `$.data.lives[N].media` — media object (single), download + decrypt:\n        - `$.data.lives[N].media.url` — video CDN link (without Token)\n        - `$.data.lives[N].media.url_token` — Token of the CDN link (anti-hotlinking)\n        - `$.data.lives[N].media.full_url` — pre-concatenated full CDN URL (= `url` + `url_token`, ready to download)\n        - `$.data.lives[N].media.decode_key` — video decryption key (**different on every request**)\n- `$.data.continue_flag` — has next page (1=yes)\n- `$.data.last_buffer` — pagination cursor (pass back to this endpoint for the next page)\n#### `raw=true` (full raw response, camelCase):\n- `$.data.totalCount` → `total_count`\n- `$.data.object[]` → `lives[]` (full video objects), media per item at `$.data.object[N].objectDesc.media[0]`: `.url` → `url`, `.urlToken` → `url_token`, `.decodeKey` → `decode_key` (`full_url` is produced by the simplified layer; for raw, concatenate `url` + `urlToken` yourself)\n- `$.data.continueFlag` → `continue_flag`\n- `$.data.lastBuffer` (alias `$.data.last_buffer`) → `last_buffer`\n\n### Important Note (video download & decryption):\n- Same as `fetch_video_detail`: download via `full_url` (Token already appended); if the MP4 cannot be played it is encrypted, decrypt with the `decode_key` from the **same response**.\n- The `live_id` of a replay (live-room dimension) can be fed into `fetch_live_detail`.\n- Online decryption tool: https://evil0ctal.github.io/WeChat-Channels-Video-File-Decryption/\n- Self-deployable decryption API (one-click Docker deployment): https://github.com/Evil0ctal/WeChat-Channels-Video-File-Decryption",
+        "operationId": "fetch_live_history_api_v1_wechat_channels_v2_fetch_live_history_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchLiveHistoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wechat_channels/v2/fetch_live_detail": {
+      "post": {
+        "tags": [
+          "WeChat-Channels-V2-API"
+        ],
+        "summary": "获取视频号直播间详情/Get WeChat Channels Live Detail",
+        "description": "# [中文]\n### 用途:\n- 传直播 `live_id` 返回直播间详情：主播信息、直播状态、在线人数、回放信息等。\n- 价格：0.01$/次\n- ⏱️ 由于微信服务器原因，本接口响应较慢，请将客户端请求超时（timeout）设置为 30 秒；timeout 设置过小会造成已扣费但收不到响应的情况。\n- ⚠️ 大整数 ID 精度：响应中的 `live_id` 等为 64 位大整数，超出 JavaScript 安全整数范围（2^53-1）。请始终以**字符串**方式接收 / 传递这类 ID（解析 JSON 用 json-bigint 或按文本取值），勿让其经过 JS `Number`。Swagger UI 文档页对超大整数会末位舍入显示，属正常现象，不影响接口实际返回的数据。\n### 参数:\n- live_id: 直播 ID（纯数字）。来源：`fetch_live_history` 的回放条目、直播入口或直播分享。示例 `2078950291205875194`。\n- scene: 可选，进入场景，默认 5。\n- finder_username: 可选，主播 finder username（`v2_…@finder` 格式），提高命中。示例 `v2_060000231003b20faec8cae1811ac4d5c702ea32b0771737aa785454f7f8177114cc4d248d66@finder`（虎嗅）。\n- raw: 可选，默认 True。True=原始响应；False=精简解析结构。\n### 返回:\n- 直播间详情\n\n### 响应结构与 JSON Path:\n#### `raw=false`（精简，snake_case）:\n- `$.data.live_id` —— 直播 ID；`$.data.object_id` —— 关联作品 objectId（可能为空串）\n- `$.data.anchor_nickname` / `$.data.anchor_username` / `$.data.anchor_head_url` —— 主播昵称 / username / 头像\n- `$.data.live_cover_url` —— 直播封面\n- `$.data.live_status` —— 直播状态（1=直播中 / 2=已结束 …）；`$.data.status_desc` —— 状态文案（可能为空）\n- `$.data.online_count` / `$.data.max_online_count` —— 当前 / 峰值在线人数（已结束的直播一般为 0）\n- `$.data.replay_status` —— 回放状态；`$.data.replay_url` —— 回放地址（可能为空）；`$.data.replay_watch_uv` —— 回放观看人数\n#### `raw=true`（完整原始响应，camelCase）:\n- `$.data.liveInfo.liveId` → `live_id`；`$.data.liveInfo.objectId` → `object_id`\n- `$.data.liveInfo.liveStatus` → `live_status`；`$.data.liveInfo.statusDesc` → `status_desc`\n- `$.data.liveInfo.onlineCnt` → `online_count`；`$.data.liveInfo.maxOnlineCount` → `max_online_count`\n- `$.data.liveInfo.replayStatus` → `replay_status`；`$.data.liveInfo.replayUrl` → `replay_url`\n- `$.data.liveInfo.replayInfo.watchUv` → `replay_watch_uv`\n- `$.data.anchorContact`（`nickname` / `username` / `headUrl` / `coverImgUrl` / `liveCoverImgUrl`）→ 主播相关字段\n- 另含 `$.data.liveCover`、`$.data.anchorInfo`、`$.data.replaySubscribedCount` 等几十个原始字段\n\n# [English]\n### Purpose:\n- Pass a live `live_id` to get live-room detail: anchor info, live status, online count, replay info, etc.\n- Price: $0.01 per request\n- ⏱️ Due to WeChat server latency, this endpoint responds slowly; please set your client request timeout to 30 seconds — a timeout that is too small may result in being billed without receiving the response.\n- ⚠️ Large-integer ID precision: IDs such as `live_id` in the response are 64-bit big integers beyond JavaScript's safe-integer range (2^53-1). Always receive / pass such IDs as **strings** (parse JSON with json-bigint or read them as text), never through JS `Number`. Swagger UI rounds the trailing digits of huge integers in its docs view — this is expected and does not affect the actual data returned by the API.\n### Parameters:\n- live_id: Live ID (numeric). Source: replay items of `fetch_live_history`, live entry, or live share. E.g. `2078950291205875194`.\n- scene: Optional, entry scene, default 5.\n- finder_username: Optional, anchor finder username (`v2_…@finder` format), improves hit rate. E.g. `v2_060000231003b20faec8cae1811ac4d5c702ea32b0771737aa785454f7f8177114cc4d248d66@finder` (Huxiu).\n- raw: Optional, default True. True=raw response; False=simplified parsed structure.\n### Return:\n- Live room detail\n\n### Response structure & JSON Path:\n#### `raw=false` (simplified, snake_case):\n- `$.data.live_id` — live ID; `$.data.object_id` — associated video objectId (may be empty string)\n- `$.data.anchor_nickname` / `$.data.anchor_username` / `$.data.anchor_head_url` — anchor nickname / username / avatar\n- `$.data.live_cover_url` — live cover\n- `$.data.live_status` — live status (1=live / 2=ended …); `$.data.status_desc` — status text (may be empty)\n- `$.data.online_count` / `$.data.max_online_count` — current / peak online count (usually 0 for ended lives)\n- `$.data.replay_status` — replay status; `$.data.replay_url` — replay address (may be empty); `$.data.replay_watch_uv` — replay viewer count\n#### `raw=true` (full raw response, camelCase):\n- `$.data.liveInfo.liveId` → `live_id`; `$.data.liveInfo.objectId` → `object_id`\n- `$.data.liveInfo.liveStatus` → `live_status`; `$.data.liveInfo.statusDesc` → `status_desc`\n- `$.data.liveInfo.onlineCnt` → `online_count`; `$.data.liveInfo.maxOnlineCount` → `max_online_count`\n- `$.data.liveInfo.replayStatus` → `replay_status`; `$.data.liveInfo.replayUrl` → `replay_url`\n- `$.data.liveInfo.replayInfo.watchUv` → `replay_watch_uv`\n- `$.data.anchorContact` (`nickname` / `username` / `headUrl` / `coverImgUrl` / `liveCoverImgUrl`) → anchor-related fields\n- Also dozens of raw fields like `$.data.liveCover`, `$.data.anchorInfo`, `$.data.replaySubscribedCount`",
+        "operationId": "fetch_live_detail_api_v1_wechat_channels_v2_fetch_live_detail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchLiveDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wechat_channels/v2/fetch_search_channel_videos": {
+      "post": {
+        "tags": [
+          "WeChat-Channels-V2-API"
+        ],
+        "summary": "视频号号内搜索/Search Videos Within a WeChat Channel",
+        "description": "# [中文]\n### 用途:\n- 号内搜：在指定创作者的视频号内，按关键词搜索其发布的视频（只在**该号内部**检索）。\n- 本接口仅做**首页检索**（请求侧不暴露 cursor 参数，单页返回），但响应仍带 `next_cursor` / `continue_flag`，供需要时自行接续翻页参考。\n- 价格：0.01$/次\n- ⏱️ 由于微信服务器原因，本接口响应较慢，请将客户端请求超时（timeout）设置为 30 秒；timeout 设置过小会造成已扣费但收不到响应的情况。\n- ⚠️ 大整数 ID 精度：响应中的 `doc_id` 等为 64 位大整数，超出 JavaScript 安全整数范围（2^53-1）。请始终以**字符串**方式接收 / 传递这类 ID（解析 JSON 用 json-bigint 或按文本取值），勿让其经过 JS `Number`。Swagger UI 文档页对超大整数会末位舍入显示，属正常现象，不影响接口实际返回的数据。\n### 参数:\n- username: 创作者 finder username（`v2_…@finder` 格式）。示例 `v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder`（人民日报）。\n- keyword: 在该号内搜索的关键词（去空白后 1-100 字）。示例 `新闻`。\n- raw: 可选，默认 True。True=原始搜索响应；False=精简解析结构。\n### 返回:\n- 号内搜索命中列表\n\n### 响应结构与 JSON Path:\n#### `raw=false`（精简，snake_case）:\n- `$.data.username` / `$.data.keyword` —— 回显入参\n- `$.data.count` —— 本页命中数（示例 20）\n- `$.data.items[]` —— 命中数组，逐个（N 为下标）:\n    - `$.data.items[N].type` —— 结果类型（如 `video`）\n    - `$.data.items[N].doc_id` —— 文档 id\n    - `$.data.items[N].title` —— 标题（已去搜索高亮标记）\n    - `$.data.items[N].desc` / `.thumb_url` / `.username` / `.nickname` —— 简介 / 缩略图 / 作者（**部分项可能为 null**）\n- `$.data.continue_flag` —— 是否还有更多（1=有）\n- `$.data.next_cursor` —— 翻页游标对象（携带检索上下文与 `offset` 等；本路由首页检索不消费它）\n#### `raw=true`（完整原始响应，camelCase）:\n- `$.data.query` → `keyword`；`$.data.offset` —— 下一页偏移（示例 20）\n- `$.data.data[]` —— 结果分组数组；命中项嵌在 `$.data.data[N].subBoxes[M].items[]`（亦可能在 `$.data.data[N].items[]`），由精简层拍平成 `items[]`\n- `$.data.continueFlag` → `continue_flag`\n- `$.data.searchID` —— 翻页所需上下文，精简层归并进 `next_cursor`（顶层另注入 `$.data.next_cursor`）\n\n### 提示:\n- 命中视频要拿媒体（下载地址 / decode_key）：本接口不直接给 `media`，请用命中项走 `fetch_video_detail` 取 `media`（`url` / `url_token` / `decode_key`），链路与解密说明见 `fetch_video_detail` 文档。\n\n# [English]\n### Purpose:\n- In-channel search: search a creator's published videos by keyword **within that channel only**.\n- This endpoint performs **first-page retrieval only** (no cursor parameter exposed, single-page result), but the response still carries `next_cursor` / `continue_flag` for reference.\n- Price: $0.01 per request\n- ⏱️ Due to WeChat server latency, this endpoint responds slowly; please set your client request timeout to 30 seconds — a timeout that is too small may result in being billed without receiving the response.\n- ⚠️ Large-integer ID precision: IDs such as `doc_id` in the response are 64-bit big integers beyond JavaScript's safe-integer range (2^53-1). Always receive / pass such IDs as **strings** (parse JSON with json-bigint or read them as text), never through JS `Number`. Swagger UI rounds the trailing digits of huge integers in its docs view — this is expected and does not affect the actual data returned by the API.\n### Parameters:\n- username: Creator finder username (`v2_…@finder` format). E.g. `v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder` (People's Daily).\n- keyword: Keyword to search within the channel (1-100 chars after trimming). E.g. `新闻`.\n- raw: Optional, default True. True=raw search response; False=simplified parsed structure.\n### Return:\n- In-channel search hit list\n\n### Response structure & JSON Path:\n#### `raw=false` (simplified, snake_case):\n- `$.data.username` / `$.data.keyword` — input echo\n- `$.data.count` — hits on this page (e.g. 20)\n- `$.data.items[]` — hit array, per item (N is the index):\n    - `$.data.items[N].type` — result type (e.g. `video`)\n    - `$.data.items[N].doc_id` — document id\n    - `$.data.items[N].title` — title (search highlight markers stripped)\n    - `$.data.items[N].desc` / `.thumb_url` / `.username` / `.nickname` — description / thumbnail / author (**may be null for some items**)\n- `$.data.continue_flag` — has more (1=yes)\n- `$.data.next_cursor` — pagination cursor object (carries search context and `offset` etc.; not consumed by this first-page-only route)\n#### `raw=true` (full raw response, camelCase):\n- `$.data.query` → `keyword`; `$.data.offset` — next page offset (e.g. 20)\n- `$.data.data[]` — result group array; hit items are nested at `$.data.data[N].subBoxes[M].items[]` (or possibly `$.data.data[N].items[]`), flattened into `items[]` by the simplified layer\n- `$.data.continueFlag` → `continue_flag`\n- `$.data.searchID` — context required for pagination, merged into `next_cursor` by the simplified layer (`$.data.next_cursor` is also injected at top level)\n\n### Tip:\n- To get media (download address / decode_key) of a hit video: this endpoint does not return `media` directly; feed the hit into `fetch_video_detail` to get `media` (`url` / `url_token` / `decode_key`). See `fetch_video_detail` docs for the chain and decryption notes.",
+        "operationId": "fetch_search_channel_videos_api_v1_wechat_channels_v2_fetch_search_channel_videos_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchSearchChannelVideosRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FetchChannelIdToUsernameRequest": {
+        "properties": {
+          "channel_id": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^sph[A-Za-z0-9_-]+$",
+            "title": "Channel Id",
+            "description": "视频号 ID（sph 开头的短号）/WeChat Channels ID (short ID starting with sph)",
+            "example": "sphi9BjV8GK0Zsl"
+          },
+          "raw": {
+            "type": "boolean",
+            "title": "Raw",
+            "description": "True=原始响应；False=精简解析结构/True=raw response; False=simplified parsed structure",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel_id"
+        ],
+        "title": "FetchChannelIdToUsernameRequest"
+      },
+      "FetchChannelInfoRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 10,
+            "pattern": "^v2_[0-9a-fA-F]+@finder$",
+            "title": "Username",
+            "description": "视频号 finder username（v2_…@finder 格式）/WeChat Channels finder username (v2_…@finder format)",
+            "example": "v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder"
+          },
+          "raw": {
+            "type": "boolean",
+            "title": "Raw",
+            "description": "True=原始响应；False=精简解析结构/True=raw response; False=simplified parsed structure",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "title": "FetchChannelInfoRequest"
+      },
+      "FetchCollectionVideosRequest": {
+        "properties": {
+          "topic_id": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[0-9]+$",
+            "title": "Topic Id",
+            "description": "合集 ID（纯数字，来自 fetch_user_collections 的 topic_id）/Collection ID (numeric, from topic_id of fetch_user_collections)",
+            "example": "14616794565351966924"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic",
+            "description": "合集名（可选，提高命中）/Collection name (optional, improves hit rate)",
+            "default": "",
+            "example": "早安中国"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^(v2_[0-9a-fA-F]+@finder)?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username",
+            "description": "创作者 finder username（可选，提高命中）/Creator finder username (optional, improves hit rate)",
+            "default": "",
+            "example": "v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder"
+          },
+          "last_buffer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9+/=_-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Buffer",
+            "description": "翻页游标（base64），首页留空/Pagination cursor (base64), leave empty for first page",
+            "default": ""
+          },
+          "topic_type": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Topic Type",
+            "description": "合集类型，默认 16（与 fetch_user_collections 返回的 topic_type 对齐）/Collection type, default 16 (align with topic_type from fetch_user_collections)",
+            "default": 16
+          },
+          "raw": {
+            "type": "boolean",
+            "title": "Raw",
+            "description": "True=原始响应；False=精简解析结构（推荐做媒体下载）/True=raw response; False=simplified parsed structure (recommended for media download)",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic_id"
+        ],
+        "title": "FetchCollectionVideosRequest"
+      },
+      "FetchLiveDetailRequest": {
+        "properties": {
+          "live_id": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[0-9]+$",
+            "title": "Live Id",
+            "description": "直播 ID（纯数字）/Live ID (numeric)",
+            "example": "2078950291205875194"
+          },
+          "scene": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Scene",
+            "description": "进入场景，默认 5/Entry scene, default 5",
+            "default": 5
+          },
+          "finder_username": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^(v2_[0-9a-fA-F]+@finder)?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finder Username",
+            "description": "主播 finder username（可选，提高命中）/Anchor finder username (optional, improves hit rate)",
+            "default": "",
+            "example": "v2_060000231003b20faec8cae1811ac4d5c702ea32b0771737aa785454f7f8177114cc4d248d66@finder"
+          },
+          "raw": {
+            "type": "boolean",
+            "title": "Raw",
+            "description": "True=原始响应；False=精简解析结构/True=raw response; False=simplified parsed structure",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "live_id"
+        ],
+        "title": "FetchLiveDetailRequest"
+      },
+      "FetchLiveHistoryRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 10,
+            "pattern": "^v2_[0-9a-fA-F]+@finder$",
+            "title": "Username",
+            "description": "视频号 finder username（v2_…@finder 格式）/WeChat Channels finder username (v2_…@finder format)",
+            "example": "v2_060000231003b20faec8cae1811ac4d5c702ea32b0771737aa785454f7f8177114cc4d248d66@finder"
+          },
+          "last_buffer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9+/=_-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Buffer",
+            "description": "翻页游标（base64），首页留空/Pagination cursor (base64), leave empty for first page",
+            "default": ""
+          },
+          "flag": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Flag",
+            "description": "拉取标志，默认 12/Fetch flag, default 12",
+            "default": 12
+          },
+          "raw": {
+            "type": "boolean",
+            "title": "Raw",
+            "description": "True=原始响应；False=精简解析结构（推荐做媒体下载）/True=raw response; False=simplified parsed structure (recommended for media download)",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "title": "FetchLiveHistoryRequest"
+      },
+      "FetchSearchChannelVideosRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 10,
+            "pattern": "^v2_[0-9a-fA-F]+@finder$",
+            "title": "Username",
+            "description": "创作者 finder username（v2_…@finder 格式）/Creator finder username (v2_…@finder format)",
+            "example": "v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder"
+          },
+          "keyword": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Keyword",
+            "description": "在该号内搜索的关键词（1-100 字）/Keyword to search within this channel (1-100 chars)",
+            "example": "新闻"
+          },
+          "raw": {
+            "type": "boolean",
+            "title": "Raw",
+            "description": "True=原始响应；False=精简解析结构/True=raw response; False=simplified parsed structure",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "keyword"
+        ],
+        "title": "FetchSearchChannelVideosRequest"
+      },
+      "FetchUserCollectionsRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 10,
+            "pattern": "^v2_[0-9a-fA-F]+@finder$",
+            "title": "Username",
+            "description": "视频号 finder username（v2_…@finder 格式）/WeChat Channels finder username (v2_…@finder format)",
+            "example": "v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder"
+          },
+          "raw": {
+            "type": "boolean",
+            "title": "Raw",
+            "description": "True=原始响应；False=精简解析结构/True=raw response; False=simplified parsed structure",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "title": "FetchUserCollectionsRequest"
+      },
+      "FetchUserProfileRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 10,
+            "pattern": "^v2_[0-9a-fA-F]+@finder$",
+            "title": "Username",
+            "description": "视频号 finder username（v2_…@finder 格式）/WeChat Channels finder username (v2_…@finder format)",
+            "example": "v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder"
+          },
+          "raw": {
+            "type": "boolean",
+            "title": "Raw",
+            "description": "True=原始响应；False=精简解析结构/True=raw response; False=simplified parsed structure",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "title": "FetchUserProfileRequest"
+      },
+      "FetchUserVideosRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 10,
+            "pattern": "^v2_[0-9a-fA-F]+@finder$",
+            "title": "Username",
+            "description": "视频号 finder username（v2_…@finder 格式）/WeChat Channels finder username (v2_…@finder format)",
+            "example": "v2_060000231003b20faec8c6e4811dc1d4c602ee30b0771bbcf220c67926bb76ab7702ac335a53@finder"
+          },
+          "last_buffer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9+/=_-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Buffer",
+            "description": "翻页游标（base64），首页留空/Pagination cursor (base64), leave empty for first page",
+            "default": ""
+          },
+          "raw": {
+            "type": "boolean",
+            "title": "Raw",
+            "description": "True=原始响应；False=精简解析结构（推荐做媒体下载）/True=raw response; False=simplified parsed structure (recommended for media download)",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "title": "FetchUserVideosRequest"
+      },
+      "FetchVideoCommentsRequest": {
+        "properties": {
+          "object_id": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[0-9]+$",
+            "title": "Object Id",
+            "description": "作品 objectId（纯数字）/Video objectId (numeric)",
+            "example": "14941130915890399732"
+          },
+          "last_buffer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9+/=_-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Buffer",
+            "description": "翻页游标（base64），首页留空/Pagination cursor (base64), leave empty for first page",
+            "default": ""
+          },
+          "comment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32,
+                "pattern": "^[0-9]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment Id",
+            "description": "展开某条评论的二级回复时传其 commentId（纯数字），首页留空/Pass a commentId (numeric) to expand its replies, leave empty for first-level comments",
+            "default": ""
+          },
+          "raw": {
+            "type": "boolean",
+            "title": "Raw",
+            "description": "True=原始响应；False=精简解析结构/True=raw response; False=simplified parsed structure",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "object_id"
+        ],
+        "title": "FetchVideoCommentsRequest"
+      },
+      "FetchVideoDetailRequest": {
+        "properties": {
+          "object_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32,
+                "pattern": "^[0-9]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Object Id",
+            "description": "作品 objectId（纯数字，最优先）/Video objectId (numeric, highest priority)",
+            "default": "",
+            "example": "14941130915890399732"
+          },
+          "export_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048,
+                "pattern": "^(export/.+)?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Export Id",
+            "description": "搜索结果中的 exportId（export/ 开头，会过期，需尽快使用）/exportId from search results (starts with export/, expires soon)",
+            "default": ""
+          },
+          "object_nonce_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32,
+                "pattern": "^[0-9]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Object Nonce Id",
+            "description": "配套 objectNonceId（纯数字，可选，提升命中率）/Optional objectNonceId (numeric, improves hit rate)",
+            "default": ""
+          },
+          "share_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^(https?://weixin\\.qq\\.com/sph/[A-Za-z0-9]+/?)?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Url",
+            "description": "视频号分享短链（https://weixin.qq.com/sph/…），仅在 object_id 与 export_id 都为空时使用/Share URL (https://weixin.qq.com/sph/…), used only when object_id and export_id are empty",
+            "default": ""
+          },
+          "raw": {
+            "type": "boolean",
+            "title": "Raw",
+            "description": "True=原始响应；False=精简解析结构（推荐做媒体下载）/True=raw response; False=simplified parsed structure (recommended for media download)",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "FetchVideoDetailRequest"
+      },
+      "FetchVideoShareUrlRequest": {
+        "properties": {
+          "object_id": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[0-9]+$",
+            "title": "Object Id",
+            "description": "作品 objectId（纯数字）/Video objectId (numeric)",
+            "example": "14941130915890399732"
+          },
+          "raw": {
+            "type": "boolean",
+            "title": "Raw",
+            "description": "True=原始响应；False=精简解析结构/True=raw response; False=simplified parsed structure",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "object_id"
+        ],
+        "title": "FetchVideoShareUrlRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ResponseModel": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "HTTP status code | HTTP状态码",
+            "default": 200
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id",
+            "description": "Unique request identifier | 唯一请求标识符"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message (EN-US) | 响应消息 (English)",
+            "default": "Request successful. This request will incur a charge."
+          },
+          "message_zh": {
+            "type": "string",
+            "title": "Message Zh",
+            "description": "Response message (ZH-CN) | 响应消息 (中文)",
+            "default": "请求成功，本次请求将被计费。"
+          },
+          "support": {
+            "type": "string",
+            "title": "Support",
+            "description": "Support message | 支持消息",
+            "default": "Discord: https://discord.gg/aMEAS8Xsvz"
+          },
+          "time": {
+            "type": "string",
+            "title": "Time",
+            "description": "The time the response was generated | 生成响应的时间"
+          },
+          "time_stamp": {
+            "type": "integer",
+            "title": "Time Stamp",
+            "description": "The timestamp the response was generated | 生成响应的时间戳"
+          },
+          "time_zone": {
+            "type": "string",
+            "title": "Time Zone",
+            "description": "The timezone of the response time | 响应时间的时区",
+            "default": "America/Los_Angeles"
+          },
+          "docs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Docs",
+            "description": "Link to the API Swagger documentation for this endpoint | 此端点的 API Swagger 文档链接"
+          },
+          "cache_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cache Message",
+            "description": "Cache message (EN-US) | 缓存消息 (English)",
+            "default": "This response is cached and accessible via the URL below for 24 hours at no extra cost. The cache is for request tracing only — it doesn't affect the API's data freshness and won't be returned through the API again."
+          },
+          "cache_message_zh": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cache Message Zh",
+            "description": "Cache message (ZH-CN) | 缓存消息 (中文)",
+            "default": "本次响应已缓存，可通过下方 URL 直接查看，有效期 24 小时，访问缓存链接无额外费用。缓存仅用于请求溯源，不影响接口数据的时效性，也不会再次通过接口返回。"
+          },
+          "cache_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cache Url",
+            "description": "The URL to access the cached result | 访问缓存结果的 URL"
+          },
+          "router": {
+            "type": "string",
+            "title": "Router",
+            "description": "The endpoint that generated this response | 生成此响应的端点",
+            "default": ""
+          },
+          "params": {
+            "title": "Params",
+            "description": "The parameters used in the request | 请求中使用的参数",
+            "default": {}
+          },
+          "data": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data",
+            "description": "The response data | 响应数据"
+          }
+        },
+        "type": "object",
+        "title": "ResponseModel"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "description": "----\n#### API Token Introduction:\n##### Method 1: Use API Token in the Request Header (Recommended)\n- **Header**: `Authorization`\n- **Format**: `Bearer {token}`\n- **Example**: `{\"Authorization\": \"Bearer your_token\"}`\n- **Swagger UI**: Click on the `Authorize` button in the upper right corner of the page to enter the API token directly without the `Bearer` keyword.\n\n##### Method 2: Use API Token in the Cookie (Not Recommended, Use Only When Method 1 is Unavailable)\n- **Cookie**: `Authorization`\n- **Format**: `Bearer {token}`\n- **Example**: `Authorization=Bearer your_token`\n\n#### Get API Token:\n1. Register and log in to your account on the TikHub website.\n2. Go to the user center, click on the API token menu, and create an API token.\n3. Copy and use the API token in the request header.\n4. Keep your API token confidential and use it only in the request header.\n\n----\n\n#### API令牌简介:\n##### 方法一：在请求头中使用API令牌（推荐）\n- **请求头**: `Authorization`\n- **格式**: `Bearer {token}`\n- **示例**: `{\"Authorization\": \"Bearer your_token\"}`\n- **Swagger UI**: 点击页面右上角的`Authorize`按钮，直接输入API令牌，不需要`Bearer`关键字。\n\n##### 方法二：在Cookie中使用API令牌（不推荐，仅在无法使用方法一时使用）\n- **Cookie**: `Authorization`\n- **格式**: `Bearer {token}`\n- **示例**: `Authorization=Bearer your_token`\n\n#### 获取API令牌:\n1. 在TikHub网站注册并登录账户。\n2. 进入用户中心，点击API令牌菜单，创建API令牌。\n3. 复制并在请求头中使用API令牌。\n4. 保密您的API令牌，仅在请求头中使用。\n",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

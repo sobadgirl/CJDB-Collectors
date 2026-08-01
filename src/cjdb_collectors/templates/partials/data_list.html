@@ -1,0 +1,473 @@
+{% if records %}
+<div class="h-[calc(100vh-12rem)] min-h-[24rem] overflow-x-auto overflow-y-visible rounded-box border border-base-300 bg-base-100">
+<div class="flex h-full min-w-[76rem] flex-col overflow-visible">
+  <div class="shrink-0 border-b border-base-300 bg-base-100">
+  <table class="table table-fixed">
+    <colgroup>
+      <col class="w-[28%]">
+      <col class="w-[9%]">
+      <col class="w-[9%]">
+      <col class="w-[8%]">
+      <col class="w-[8%]">
+      <col class="w-[8%]">
+      <col class="w-[8%]">
+      <col class="w-[8%]">
+      <col class="w-[8%]">
+      <col class="w-[6%]">
+    </colgroup>
+    <thead><tr><th>作品</th><th>平台</th><th>类型</th><th>播放量</th><th>点赞量</th><th>收藏量</th><th>转发量</th><th>评论量</th><th>同步数据</th><th class="text-right">操作</th></tr></thead>
+  </table>
+  </div>
+  <div class="min-h-0 flex-1 overflow-auto">
+  <table class="table table-fixed">
+    <colgroup>
+      <col class="w-[28%]">
+      <col class="w-[9%]">
+      <col class="w-[9%]">
+      <col class="w-[8%]">
+      <col class="w-[8%]">
+      <col class="w-[8%]">
+      <col class="w-[8%]">
+      <col class="w-[8%]">
+      <col class="w-[8%]">
+      <col class="w-[6%]">
+    </colgroup>
+    <tbody>
+    {% for record in records %}
+      {% set content_type = record.content_type.value if record.content_type.value is defined else record.content_type %}
+      {% set collection_status = record.collection_status.value if record.collection_status.value is defined else record.collection_status %}
+      {% set collection_dot = "bg-emerald-500" if collection_status == "succeeded" else "bg-red-500" if collection_status in ["failed", "timeout", "cancelled"] else "bg-amber-400 animate-pulse" if collection_status == "running" else "bg-slate-300" %}
+      {% set collection_title = "数据采集完成" if collection_status == "succeeded" else "数据采集失败" if collection_status in ["failed", "timeout", "cancelled"] else "数据正在采集" if collection_status == "running" else "等待调度采集" if collection_status in ["pending", "retry_wait"] else "尚未采集数据" %}
+      {% set comment_status = record.comment_collection_status.value if record.comment_collection_status.value is defined else record.comment_collection_status %}
+      {% set comment_dot = "bg-emerald-500" if comment_status == "succeeded" else "bg-red-500" if comment_status in ["failed", "timeout", "cancelled"] else "bg-amber-400 animate-pulse" if comment_status == "running" else "bg-slate-300" %}
+      {% set comment_title = "评论采集完成" if comment_status == "succeeded" else "评论采集失败" if comment_status in ["failed", "timeout", "cancelled"] else "评论正在采集" if comment_status == "running" else "等待调度采集评论" if comment_status in ["pending", "retry_wait"] else "不采集评论" %}
+      <tr x-data="{
+            groupOpen: false,
+            actionOpen: false,
+            deleteOpen: false,
+            actionX: 0,
+            actionY: 0,
+            previewOpen: false,
+            previewX: 0,
+            previewY: 0,
+            previewTimer: null,
+            statusOpen: null,
+            statusX: 0,
+            statusY: 0,
+            statusTimer: null,
+            showPreview(el) {
+              clearTimeout(this.previewTimer);
+              const rect = el.getBoundingClientRect();
+              this.previewX = Math.min(Math.max(12, rect.left), window.innerWidth - 464);
+              this.previewY = Math.max(12, Math.min(rect.bottom + 10, window.innerHeight - 520));
+              this.previewOpen = true;
+            },
+            schedulePreviewClose() {
+              this.previewTimer = setTimeout(() => { this.previewOpen = false }, 220);
+            },
+            keepPreviewOpen() {
+              clearTimeout(this.previewTimer);
+            },
+            toggleActions(el) {
+              const rect = el.getBoundingClientRect();
+              this.actionX = Math.max(12, Math.min(rect.right - 176, window.innerWidth - 188));
+              this.actionY = Math.min(rect.bottom + 8, window.innerHeight - 124);
+              this.actionOpen = !this.actionOpen;
+            },
+            showStatus(name, el) {
+              clearTimeout(this.statusTimer);
+              const rect = el.getBoundingClientRect();
+              this.statusX = Math.min(rect.left, window.innerWidth - 320);
+              this.statusY = rect.bottom + 8;
+              this.statusOpen = name;
+            },
+            scheduleStatusClose() {
+              this.statusTimer = setTimeout(() => { this.statusOpen = null }, 320);
+            },
+            keepStatusOpen() {
+              clearTimeout(this.statusTimer);
+            }
+          }">
+        <td>
+          <div class="relative min-h-10"
+               {% if tab == 'awemes' %}@mouseenter="showPreview($el)" @mouseleave="schedulePreviewClose()"{% endif %}>
+            <div class="font-medium">{{ record.title or record.display_name or "等待采集" }}</div>
+            <div class="max-w-lg truncate text-xs opacity-55">{{ record.aweme_url or record.source_url or record.profile_url or "" }}</div>
+            {% if tab == 'awemes' %}
+            <template x-teleport="body">
+            <div class="fixed z-50 w-[28rem] overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-2xl"
+                 x-cloak x-show="previewOpen"
+                 x-transition.opacity.duration.100ms
+                 :style="`left:${previewX}px; top:${previewY}px`"
+                 @mouseenter="keepPreviewOpen()" @mouseleave="schedulePreviewClose()">
+              <div class="flex min-h-40 border-b border-slate-200">
+                <div class="grid w-36 shrink-0 place-items-center bg-slate-100">
+                  {% if record.cover_url %}
+                  <img src="{{ record.cover_url }}" alt="{{ record.title or '作品封面' }}"
+                       class="h-full max-h-44 w-full object-cover">
+                  {% else %}
+                  <div class="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-400">
+                    <svg class="size-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                      <path d="M4 6h16v12H4z"/><path d="m10 9 5 3-5 3V9Z"/>
+                    </svg>
+                    <span class="text-xs">无封面</span>
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="min-w-0 flex-1 p-4">
+                  <div class="mb-2 flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="line-clamp-2 text-base font-semibold leading-6 text-slate-950">{{ record.title or "等待采集" }}</p>
+                      <p class="mt-1 text-xs text-slate-500">{{ record.platform or "待解析" }} · {{ content_type or "unknown" }}</p>
+                    </div>
+                    <span class="mt-1 size-2.5 shrink-0 rounded-full {{ collection_dot }}"></span>
+                  </div>
+                  <dl class="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
+                    <dt class="text-slate-400">作品 URL</dt>
+                    <dd class="truncate text-slate-700">{{ record.aweme_url or record.source_url or "-" }}</dd>
+                    <dt class="text-slate-400">作品 ID</dt>
+                    <dd class="truncate font-mono text-slate-700">{{ record.platform_aweme_id or "-" }}</dd>
+                    <dt class="text-slate-400">本地 ID</dt>
+                    <dd class="truncate font-mono text-slate-700">{{ record.id }}</dd>
+                  </dl>
+                </div>
+              </div>
+              {% if record.description %}
+              <p class="max-h-20 overflow-auto border-b border-slate-100 px-4 py-3 text-sm leading-6 text-slate-700">{{ record.description }}</p>
+              {% endif %}
+              <div class="grid grid-cols-5 border-b border-slate-100 text-center">
+                <div class="px-2 py-3"><p class="text-sm font-semibold text-slate-950">{{ record.play_count if record.play_count is not none else "-" }}</p><p class="mt-0.5 text-[11px] text-slate-400">播放</p></div>
+                <div class="px-2 py-3"><p class="text-sm font-semibold text-slate-950">{{ record.like_count if record.like_count is not none else "-" }}</p><p class="mt-0.5 text-[11px] text-slate-400">点赞</p></div>
+                <div class="px-2 py-3"><p class="text-sm font-semibold text-slate-950">{{ record.collect_count if record.collect_count is not none else "-" }}</p><p class="mt-0.5 text-[11px] text-slate-400">收藏</p></div>
+                <div class="px-2 py-3"><p class="text-sm font-semibold text-slate-950">{{ record.share_count if record.share_count is not none else "-" }}</p><p class="mt-0.5 text-[11px] text-slate-400">转发</p></div>
+                <div class="px-2 py-3"><p class="text-sm font-semibold text-slate-950">{{ record.comment_count if record.comment_count is not none else "-" }}</p><p class="mt-0.5 text-[11px] text-slate-400">评论</p></div>
+              </div>
+              <div class="grid gap-4 p-4 sm:grid-cols-2">
+                <div class="min-w-0">
+                  <p class="mb-2 text-xs font-semibold text-slate-500">评论</p>
+                  {% set comments = record.comments_json if record.comments_json is defined else [] %}
+                  {% if comments %}
+                  <div class="space-y-2">
+                    {% for comment in comments[:3] %}
+                    {% set comment_text = comment.get('text') or comment.get('content') or comment.get('comment_text') or comment.get('desc') or comment|string %}
+                    <p class="line-clamp-2 rounded-md bg-slate-50 px-2 py-1.5 text-xs leading-5 text-slate-600">{{ comment_text }}</p>
+                    {% endfor %}
+                  </div>
+                  {% else %}
+                  <p class="rounded-md bg-slate-50 px-2 py-2 text-xs text-slate-400">暂无评论数据</p>
+                  {% endif %}
+                </div>
+                <div class="min-w-0">
+                  <p class="mb-2 text-xs font-semibold text-slate-500">数据</p>
+                  <dl class="space-y-1 text-xs">
+                    <div class="flex justify-between gap-3"><dt class="text-slate-400">采集状态</dt><dd class="truncate text-slate-700">{{ collection_status or "-" }}</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-slate-400">评论状态</dt><dd class="truncate text-slate-700">{{ comment_status or "-" }}</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-slate-400">视频</dt><dd class="truncate text-slate-700">{{ record.video_url or record.video_path or "-" }}</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-slate-400">采集时间</dt><dd class="truncate text-slate-700">{{ record.last_collected_at or "-" }}</dd></div>
+                  </dl>
+                  {% if record.extra_data_json %}
+                  <p class="mt-2 max-h-16 overflow-auto rounded-md bg-slate-50 px-2 py-1.5 font-mono text-[11px] leading-5 text-slate-500">{{ record.extra_data_json|tojson|truncate(260) }}</p>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            </template>
+            {% endif %}
+          </div>
+        </td>
+        <td>{{ record.platform or "待解析" }}</td>
+        <td>{{ content_type or "unknown" }}</td>
+        {% set next = namespace(url="/?tab=" ~ tab ~ "&page=" ~ pagination.page ~ "&per_page=" ~ pagination.per_page) %}
+        {% for id in selected_group_ids %}
+          {% set next.url = next.url ~ "&group_id=" ~ id %}
+        {% endfor %}
+        <td><span class="inline-flex items-center gap-2"><span class="size-2.5 cursor-pointer rounded-full {{ collection_dot }}"
+                  @mouseenter="showStatus('collection', $el)" @mouseleave="scheduleStatusClose()"></span>{{ record.play_count if record.play_count is not none else "-" }}</span></td>
+        <td><span class="inline-flex items-center gap-2"><span class="size-2.5 cursor-pointer rounded-full {{ collection_dot }}"
+                  @mouseenter="showStatus('collection', $el)" @mouseleave="scheduleStatusClose()"></span>{{ record.like_count if record.like_count is not none else "-" }}</span></td>
+        <td><span class="inline-flex items-center gap-2"><span class="size-2.5 cursor-pointer rounded-full {{ collection_dot }}"
+                  @mouseenter="showStatus('collection', $el)" @mouseleave="scheduleStatusClose()"></span>{{ record.collect_count if record.collect_count is not none else "-" }}</span></td>
+        <td><span class="inline-flex items-center gap-2"><span class="size-2.5 cursor-pointer rounded-full {{ collection_dot }}"
+                  @mouseenter="showStatus('collection', $el)" @mouseleave="scheduleStatusClose()"></span>{{ record.share_count if record.share_count is not none else "-" }}</span></td>
+        <td><span class="inline-flex items-center gap-2"><span class="size-2.5 cursor-pointer rounded-full {{ comment_dot }}"
+                  @mouseenter="showStatus('comments', $el)" @mouseleave="scheduleStatusClose()"></span>{{ record.comment_count if record.comment_count is not none else "-" }}</span>
+          <template x-teleport="body">
+          <div class="fixed z-50 w-80 rounded-lg border border-slate-200 bg-white p-3 text-left shadow-xl"
+               x-cloak x-show="statusOpen"
+               :style="`left:${statusX}px; top:${statusY}px`"
+               @mouseenter="keepStatusOpen()" @mouseleave="scheduleStatusClose()">
+            <div x-show="statusOpen === 'collection'">
+              <div class="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-slate-900">数据采集状态</p>
+                  <p class="mt-1 text-xs text-slate-500">{{ collection_title }}</p>
+                </div>
+                <span class="mt-1 size-2.5 shrink-0 rounded-full {{ collection_dot }}"></span>
+              </div>
+              <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
+                <dt>平台</dt><dd class="truncate text-right text-slate-700">{{ record.platform or "待解析" }}</dd>
+                <dt>平台 ID</dt><dd class="truncate text-right text-slate-700">{{ record.platform_aweme_id or "-" }}</dd>
+                <dt>最近完成</dt><dd class="truncate text-right text-slate-700">{{ record.last_collected_at or record.collection_finished_at or "-" }}</dd>
+              </dl>
+              {% if record.collection_error %}
+              <p class="mt-2 max-h-16 overflow-auto rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-700">{{ record.collection_error }}</p>
+              {% endif %}
+              <div class="mt-3 grid grid-cols-2 gap-2">
+                <form method="post"
+                      action="/actions/{% if tab == 'awemes' %}awemes{% else %}accounts{% endif %}/{{ record.id }}/collect"
+                      data-async-list-action
+                      hx-post="/actions/{% if tab == 'awemes' %}awemes{% else %}accounts{% endif %}/{{ record.id }}/collect"
+                      hx-target="#data-list"
+                      hx-swap="innerHTML">
+                  <input type="hidden" name="next_url" value="{{ next.url }}">
+                  <button class="btn btn-sm w-full bg-slate-900 text-white hover:bg-slate-700"
+                          {% if collection_status == "running" %}disabled{% endif %}>
+                    {% if collection_status in ["failed", "timeout", "cancelled"] %}重试{% else %}采集{% endif %}
+                  </button>
+                </form>
+                {% if tab == 'awemes' %}
+                <form method="post"
+                      action="/actions/awemes/{{ record.id }}/collect/cancel"
+                      data-async-list-action
+                      hx-post="/actions/awemes/{{ record.id }}/collect/cancel"
+                      hx-target="#data-list"
+                      hx-swap="innerHTML">
+                  <input type="hidden" name="next_url" value="{{ next.url }}">
+                  <button class="btn btn-sm btn-ghost w-full text-slate-600"
+                          {% if collection_status in ["succeeded", "cancelled"] %}disabled{% endif %}>取消</button>
+                </form>
+                {% else %}
+                <button class="btn btn-sm btn-ghost w-full" disabled>取消</button>
+                {% endif %}
+              </div>
+            </div>
+            <div x-show="statusOpen === 'comments'">
+              <div class="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-slate-900">评论采集状态</p>
+                  <p class="mt-1 text-xs text-slate-500">{{ comment_title }}</p>
+                </div>
+                <span class="mt-1 size-2.5 shrink-0 rounded-full {{ comment_dot }}"></span>
+              </div>
+              <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
+                <dt>评论数</dt><dd class="truncate text-right text-slate-700">{{ record.comment_count if record.comment_count is not none else "-" }}</dd>
+                <dt>已采集</dt><dd class="truncate text-right text-slate-700">{{ record.comments_json|length if record.comments_json is defined else 0 }} 条</dd>
+                <dt>最近完成</dt><dd class="truncate text-right text-slate-700">{{ record.comments_collected_at or record.comment_collection_finished_at or "-" }}</dd>
+              </dl>
+              {% if record.comment_collection_error %}
+              <p class="mt-2 max-h-16 overflow-auto rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-700">{{ record.comment_collection_error }}</p>
+              {% endif %}
+              {% if tab == 'awemes' %}
+              <div class="mt-3 grid grid-cols-2 gap-2">
+                <form method="post"
+                      action="/actions/awemes/{{ record.id }}/comments/collect"
+                      data-async-list-action
+                      hx-post="/actions/awemes/{{ record.id }}/comments/collect"
+                      hx-target="#data-list"
+                      hx-swap="innerHTML">
+                  <input type="hidden" name="next_url" value="{{ next.url }}">
+                  <button class="btn btn-sm w-full bg-slate-900 text-white hover:bg-slate-700"
+                          {% if comment_status == "running" %}disabled{% endif %}>
+                    {% if comment_status in ["failed", "timeout", "cancelled"] %}重试{% else %}采集评论{% endif %}
+                  </button>
+                </form>
+                <form method="post"
+                      action="/actions/awemes/{{ record.id }}/comments/collect/cancel"
+                      data-async-list-action
+                      hx-post="/actions/awemes/{{ record.id }}/comments/collect/cancel"
+                      hx-target="#data-list"
+                      hx-swap="innerHTML">
+                  <input type="hidden" name="next_url" value="{{ next.url }}">
+                  <button class="btn btn-sm btn-ghost w-full text-slate-600"
+                          {% if comment_status in ["succeeded", "cancelled", "not_requested"] %}disabled{% endif %}>取消</button>
+                </form>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          </template>
+        </td>
+        <td>
+          {% set syncs = record_syncs.get(record.id|string, []) %}
+          <div class="relative inline-flex min-h-8 items-center gap-1.5"
+               x-data="{ open: false, x: 0, y: 0 }"
+               @mouseenter="const rect = $el.getBoundingClientRect(); x = Math.min(rect.left, window.innerWidth - 304); y = rect.bottom + 8; open = true"
+               @mouseleave="open = false">
+            {% if syncs %}
+              {% for sync in syncs %}
+                {% set status = sync.status %}
+                <span class="size-2.5 rounded-full {% if status == 'succeeded' %}bg-emerald-500{% elif status in ['failed', 'timeout'] %}bg-red-500{% elif status == 'running' %}bg-amber-400{% else %}bg-slate-300{% endif %} {% if status == 'running' %}animate-pulse{% endif %}"
+                      title="{{ sync.storer.name if sync.storer else '未知存储' }}"></span>
+              {% endfor %}
+            {% else %}
+              <span class="size-2.5 rounded-full bg-slate-300" title="未开始同步"></span>
+            {% endif %}
+            <template x-teleport="body">
+            <div class="pointer-events-none fixed z-50 w-72 rounded-lg border border-slate-200 bg-white p-3 text-left shadow-xl"
+                 x-cloak x-show="open"
+                 :style="`left:${x}px; top:${y}px`">
+              {% if syncs %}
+                <div class="space-y-2">
+                {% for sync in syncs %}
+                  {% set status = sync.status %}
+                  <div class="flex items-start gap-3">
+                    <span class="mt-1.5 size-2.5 shrink-0 rounded-full {% if status == 'succeeded' %}bg-emerald-500{% elif status in ['failed', 'timeout'] %}bg-red-500{% elif status == 'running' %}bg-amber-400{% else %}bg-slate-300{% endif %} {% if status == 'running' %}animate-pulse{% endif %}"></span>
+                    <div class="min-w-0">
+                      <p class="truncate text-sm font-medium text-slate-900">{{ sync.storer.name if sync.storer else "未知存储" }}</p>
+                      <p class="text-xs text-slate-500">
+                        {{ sync.storer.type if sync.storer else "unknown" }} ·
+                        {% if status == 'succeeded' %}同步成功
+                        {% elif status in ['failed', 'timeout'] %}同步失败
+                        {% elif status == 'running' %}同步中
+                        {% elif status in ['pending', 'retry_wait'] %}等待同步
+                        {% else %}还没开始同步{% endif %}
+                      </p>
+                      {% if sync.error_message %}
+                      <p class="mt-1 max-h-8 overflow-hidden text-xs text-red-600">{{ sync.error_message }}</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endfor %}
+                </div>
+              {% else %}
+                <p class="text-sm font-medium text-slate-900">还没开始同步</p>
+                <p class="mt-1 text-xs text-slate-500">当前数据还没有绑定到任何存储连接器。</p>
+              {% endif %}
+            </div>
+            </template>
+          </div>
+        </td>
+        <td class="text-right">
+          <button type="button"
+                  class="btn btn-ghost btn-square btn-xs"
+                  title="操作"
+                  aria-label="操作"
+                  @click.stop="toggleActions($el)"
+                  @keydown.escape.window="actionOpen=false"
+                  @click.outside="actionOpen=false">
+            <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/>
+            </svg>
+          </button>
+          <template x-teleport="body">
+          <div class="fixed z-50 w-44 rounded-lg border border-slate-200 bg-white p-1.5 text-left shadow-xl"
+               x-cloak
+               x-show="actionOpen"
+               :style="`left:${actionX}px; top:${actionY}px`"
+               @click.outside="actionOpen=false"
+               @keydown.escape.window="actionOpen=false">
+            <button type="button"
+                    class="flex min-h-9 w-full items-center rounded-md px-3 text-sm text-slate-700 hover:bg-slate-100"
+                    @click="actionOpen=false; groupOpen=true">编辑</button>
+            <button type="button"
+                    class="flex min-h-9 w-full items-center rounded-md px-3 text-sm text-red-600 hover:bg-red-50"
+                    @click="actionOpen=false; deleteOpen=true">删除</button>
+          </div>
+          </template>
+          {% set delete_files = record_delete_files.get(record.id|string, []) %}
+          <template x-teleport="body">
+          <div class="modal text-left" :class="{ 'modal-open': deleteOpen }">
+            <div class="modal-box max-w-2xl">
+              <h3 class="text-lg font-bold">删除{{ "作品" if tab == "awemes" else "账号" }}</h3>
+              <p class="mt-2 text-sm text-slate-500">请确认下面这些内容。删除记录后，这条数据不会再出现在列表中。</p>
+              <div class="mt-4 rounded-lg border border-slate-200 p-3">
+                <p class="text-sm font-semibold text-slate-900">{{ record.title or record.display_name or "未命名数据" }}</p>
+                <p class="mt-1 break-all text-xs text-slate-500">{{ record.aweme_url or record.source_url or record.profile_url or record.id }}</p>
+              </div>
+              {% if delete_files %}
+              <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <label class="flex cursor-pointer items-start gap-3">
+                  <input class="checkbox checkbox-sm mt-0.5" type="checkbox" name="delete_downloaded_files" value="true" form="delete-{{ record.id }}">
+                  <span>
+                    <span class="block text-sm font-semibold text-slate-900">同步删除已下载文件</span>
+                    <span class="mt-1 block text-xs text-slate-600">勾选后会删除下面列出的本地文件。</span>
+                  </span>
+                </label>
+                <div class="mt-3 space-y-2">
+                  {% for file in delete_files %}
+                  <div class="rounded-md bg-white px-3 py-2 text-xs">
+                    <div class="font-medium text-slate-700">{{ file.label }}</div>
+                    <div class="mt-1 break-all font-mono text-slate-500">{{ file.path }}</div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">
+                没有检测到需要同步删除的本地下载文件。
+              </div>
+              {% endif %}
+              <form id="delete-{{ record.id }}"
+                    method="post"
+                    action="/actions/{% if tab == 'awemes' %}awemes{% else %}accounts{% endif %}/{{ record.id }}/delete"
+                    data-async-list-action
+                    hx-post="/actions/{% if tab == 'awemes' %}awemes{% else %}accounts{% endif %}/{{ record.id }}/delete"
+                    hx-target="#data-list"
+                    hx-swap="innerHTML">
+                <input type="hidden" name="next_url" value="{{ next.url }}">
+                <div class="modal-action">
+                  <button type="button" class="btn btn-ghost" @click="deleteOpen=false">取消</button>
+                  <button class="btn bg-red-600 text-white hover:bg-red-700">确认删除</button>
+                </div>
+              </form>
+            </div>
+            <div class="modal-backdrop" @click="deleteOpen=false"></div>
+          </div>
+          </template>
+          <div class="modal text-left" :class="{ 'modal-open': groupOpen }">
+            <div class="modal-box">
+              <h3 class="mb-4 text-lg font-bold">管理分组</h3>
+              <form method="post"
+                    action="/actions/{% if tab == 'awemes' %}awemes{% else %}accounts{% endif %}/{{ record.id }}/groups">
+                <div class="grid grid-cols-2 gap-3">
+                  {% for group in groups %}
+                  <label class="flex items-center gap-2">
+                    <input class="checkbox checkbox-sm" type="checkbox"
+                           name="group_ids" value="{{ group.id }}"
+                           {% if group.id|string in record_group_ids.get(record.id|string, []) %}checked{% endif %}>
+                    {{ group.name }}
+                  </label>
+                  {% endfor %}
+                </div>
+                <div class="alert alert-warning mt-4 text-sm">
+                  移出分组不会删除已经建立的同步关系或 Notion 远端数据。
+                </div>
+                <div class="modal-action">
+                  <button type="button" class="btn" @click="groupOpen=false">取消</button>
+                  <button class="btn btn-primary">保存</button>
+                </div>
+              </form>
+            </div>
+            <div class="modal-backdrop" @click="groupOpen=false"></div>
+          </div>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="flex min-h-14 shrink-0 items-center justify-between border-t border-base-300 px-4 text-sm text-slate-500">
+    <span>第 {{ pagination.page }} 页 · 本页 {{ records|length }} 条</span>
+    <div class="join">
+      {% if pagination.page > 1 %}
+      <a class="btn join-item btn-sm"
+         href="/?tab={{ tab }}&page={{ pagination.page - 1 }}&per_page={{ pagination.per_page }}{% for id in selected_group_ids %}&group_id={{ id }}{% endfor %}">上一页</a>
+      {% else %}
+      <button class="btn join-item btn-sm" disabled>上一页</button>
+      {% endif %}
+      <button class="btn join-item btn-sm btn-active">{{ pagination.page }}</button>
+      {% if pagination.has_next %}
+      <a class="btn join-item btn-sm"
+         href="/?tab={{ tab }}&page={{ pagination.page + 1 }}&per_page={{ pagination.per_page }}{% for id in selected_group_ids %}&group_id={{ id }}{% endfor %}">下一页</a>
+      {% else %}
+      <button class="btn join-item btn-sm" disabled>下一页</button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+</div>
+{% else %}
+<div class="py-20 text-center opacity-60">
+  {% if selected_group_ids %}所选分组中暂无数据。{% else %}暂无数据。{% endif %}
+</div>
+{% endif %}

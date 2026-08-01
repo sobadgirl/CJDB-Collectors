@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}视频转写 · 超级对标{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-7xl p-4 sm:p-8" x-data="transcriptionCreator()">
+  <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="mb-1 text-sm font-medium text-slate-400">音视频处理</p>
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="text-2xl font-semibold text-slate-900">视频转写</h1>
+        {% set provider_status_title = "转写服务" %}
+        {% set provider_status_types = ["video_transcription"] %}
+        {% include "partials/provider_runtime_status.html" %}
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <button class="btn border-slate-900 bg-slate-900 text-white hover:border-slate-700 hover:bg-slate-700"
+              @click="open=true; ensureLoaded()">新建转写</button>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    <table class="table">
+      <thead><tr><th>视频来源</th><th>状态</th><th>进度</th><th></th></tr></thead>
+      <tbody>
+      {% for item in records %}
+      <tr>
+        <td class="max-w-xl truncate">{{ item.video_path or item.source_url or "等待下载" }}</td>
+        <td><span class="badge badge-ghost">{{ item.status }}</span></td>
+        <td><progress class="progress progress-primary w-32" value="{{ item.progress or 0 }}" max="1"></progress></td>
+        <td class="flex justify-end gap-1">
+          {% if item.status in ["failed", "timeout", "cancelled"] %}
+          <form method="post" action="/actions/transcriptions/{{ item.id }}/retry">
+            <button class="btn btn-xs">重试</button>
+          </form>
+          {% endif %}
+          {% if item.status in ["pending", "running", "retry_wait"] %}
+          <form method="post" action="/actions/transcriptions/{{ item.id }}/cancel">
+            <button class="btn btn-ghost btn-xs">取消</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="py-16 text-center text-slate-400">暂无转写任务。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal" :class="{ 'modal-open': open }">
+    <div class="modal-box max-w-2xl">
+      <h3 class="text-lg font-bold">新建视频转写</h3>
+      <p class="mt-1 text-sm text-slate-500">从服务端本地目录选择视频，或直接填写视频 URL。</p>
+      <form action="/actions/transcriptions" method="post" class="mt-5 space-y-4">
+        <div class="grid w-full grid-cols-2 rounded-lg bg-slate-100 p-1">
+          <button type="button" class="min-h-10 rounded-md px-4 text-sm font-medium"
+                  :class="source === 'local' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500'"
+                  @click="source='local'; ensureLoaded()">本地文件</button>
+          <button type="button" class="min-h-10 rounded-md px-4 text-sm font-medium"
+                  :class="source === 'url' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500'"
+                  @click="source='url'">视频 URL</button>
+        </div>
+
+        <div x-show="source === 'local'" class="space-y-3">
+          <input type="hidden" name="local_root_id" :value="selected?.rootId || ''" :disabled="source !== 'local'">
+          <input type="hidden" name="local_path" :value="selected?.path || ''" :disabled="source !== 'local'">
+
+          <div class="flex flex-wrap gap-2" x-show="roots.length">
+            <template x-for="root in roots" :key="root.id">
+              <button type="button" class="btn btn-sm"
+                      :class="{ 'border-slate-900 bg-slate-900 text-white': current?.root_id === root.id }"
+                      @click="load(root.id, '')" x-text="root.name"></button>
+            </template>
+          </div>
+
+          <div class="overflow-hidden rounded-lg border border-slate-200">
+            <div class="flex min-h-11 items-center gap-2 border-b border-slate-200 bg-slate-50 px-3">
+              <button type="button" class="btn btn-ghost btn-sm btn-square"
+                      title="返回上一级" aria-label="返回上一级"
+                      :disabled="!current || parentPath === null"
+                      @click="load(current.root_id, parentPath)">
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+              </button>
+              <span class="truncate text-sm font-medium"
+                    x-text="current ? `${current.root_name}${current.path ? ' / ' + current.path : ''}` : '选择一个目录'"></span>
+              <span class="loading loading-spinner loading-sm ml-auto" x-show="loading"></span>
+            </div>
+
+            <div class="max-h-72 min-h-48 overflow-y-auto p-1">
+              <template x-for="entry in entries" :key="entry.path">
+                <button type="button"
+                        class="flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm hover:bg-slate-100"
+                        :class="{ 'bg-slate-100 font-medium': selected?.path === entry.path }"
+                        @click="entry.kind === 'directory' ? load(current.root_id, entry.path) : selectFile(entry)">
+                  <svg class="size-5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path x-show="entry.kind === 'directory'" d="M3 6.5h6l2 2h10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-11Z"/>
+                    <path x-show="entry.kind === 'file'" d="M6 3h8l4 4v14H6V3Z"/><path x-show="entry.kind === 'file'" d="M14 3v5h5"/>
+                  </svg>
+                  <span class="min-w-0 flex-1 truncate" x-text="entry.name"></span>
+                  <span class="text-xs text-slate-400" x-show="entry.kind === 'file'" x-text="formatSize(entry.size_bytes)"></span>
+                  <svg class="size-4 text-slate-300" x-show="entry.kind === 'directory'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </button>
+              </template>
+              <div class="grid min-h-44 place-items-center px-6 text-center text-sm text-slate-400"
+                   x-show="!loading && !entries.length">
+                <span x-text="error || (roots.length ? '这个目录中没有可用视频' : '没有可用目录，请在 config.yaml 中配置 browse_roots')"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800" x-show="selected">
+            已选择：<span class="font-medium" x-text="selected?.name"></span>
+          </div>
+        </div>
+
+        <div x-show="source === 'url'">
+          <label class="mb-1.5 block text-sm font-medium" for="transcription-url">视频 URL</label>
+          <input class="input input-bordered w-full" type="url" name="url"
+                 id="transcription-url"
+                 placeholder="https://example.com/video.mp4"
+                 :required="source === 'url'" :disabled="source !== 'url'">
+        </div>
+
+        <div class="modal-action">
+          <button type="button" class="btn btn-ghost" @click="open=false">取消</button>
+          <button class="btn border-slate-900 bg-slate-900 text-white hover:bg-slate-700"
+                  :disabled="source === 'local' && !selected">创建任务</button>
+        </div>
+      </form>
+    </div>
+    <div class="modal-backdrop" @click="open=false"></div>
+  </div>
+</section>
+
+{% include "partials/provider_config_modal.html" %}
+<script>
+function transcriptionCreator() {
+  return {
+    open: false,
+    source: 'local',
+    roots: [],
+    current: null,
+    parentPath: null,
+    entries: [],
+    selected: null,
+    loading: false,
+    error: '',
+    loaded: false,
+    async ensureLoaded() {
+      if (this.loaded) return;
+      await this.load();
+    },
+    async load(rootId = null, path = '') {
+      this.loading = true;
+      this.error = '';
+      const params = new URLSearchParams();
+      if (rootId !== null) params.set('root_id', rootId);
+      if (path) params.set('path', path);
+      try {
+        const response = await fetch(`/api/v1/local-media?${params}`);
+        if (!response.ok) throw new Error('目录读取失败');
+        const data = await response.json();
+        this.roots = data.roots;
+        this.current = data.current;
+        this.parentPath = data.parent_path;
+        this.entries = data.entries;
+        this.loaded = true;
+      } catch (error) {
+        this.error = error.message;
+        this.entries = [];
+      } finally {
+        this.loading = false;
+      }
+    },
+    selectFile(entry) {
+      this.selected = {
+        rootId: this.current.root_id,
+        path: entry.path,
+        name: entry.name
+      };
+    },
+    formatSize(bytes) {
+      if (!Number.isFinite(bytes)) return '';
+      if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+      return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    }
+  };
+}
+</script>
+{% endblock %}

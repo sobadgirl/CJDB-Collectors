@@ -1,0 +1,165 @@
+<div x-data='providerServiceSettings({{ provider_catalog|tojson }})'
+     x-init="init()"
+     @provider-status-updated.window="handleStatusEvent($event.detail)">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold text-slate-950">服务状态</h2>
+      <p class="mt-1 text-sm text-slate-500">为每项服务选择并配置 Provider。</p>
+    </div>
+    <button type="button"
+            class="btn btn-sm"
+            :disabled="busy"
+            @click="refreshAll()">刷新状态</button>
+  </div>
+
+  <div class="mt-4 grid overflow-hidden rounded-lg border border-slate-200 md:grid-cols-2">
+    <template x-for="service in services" :key="service.type">
+      <div class="flex min-h-24 items-center gap-3 border-b border-slate-200 p-4 md:[&:nth-child(odd)]:border-r"
+           :data-provider-type="service.type">
+        <span class="size-2.5 shrink-0 rounded-full"
+              :class="statusClass(service.status)"></span>
+        <div class="min-w-0 flex-1">
+          <div class="font-medium text-slate-900" x-text="service.label"></div>
+          <div class="mt-1 truncate text-sm text-slate-500"
+               x-text="service.provider?.name || '未选择'"></div>
+          <div class="mt-0.5 truncate text-xs"
+               :class="statusTextClass(service.status)"
+               x-text="service.message || stateText(service.status)"></div>
+        </div>
+        <button type="button"
+                class="btn btn-sm shrink-0"
+                :data-provider-type="service.type"
+                @click="configure(service)">配置</button>
+      </div>
+    </template>
+  </div>
+
+  <div class="mt-3 text-sm text-red-600" x-show="error" x-text="error"></div>
+</div>
+
+<script>
+function providerServiceSettings(catalog) {
+  const labels = {
+    douyin_aweme_collect: '抖音数据采集',
+    xiaohongshu_aweme_collect: '小红书数据采集',
+    wechat_channels_aweme_collect: '视频号数据采集',
+    wechat_mp_aweme_collect: '公众号数据采集',
+    xiaohongshu_comment_collect: '小红书评论下载',
+    account_collect: '账号数据采集',
+    video_transcription: '视频转写'
+  };
+
+  return {
+    catalog,
+    services: [],
+    busy: false,
+    loaded: false,
+    error: '',
+    init() {
+      const selected = catalog.type
+        ? { [catalog.type]: catalog.selected }
+        : { ...(catalog.selected || {}) };
+      const availableTypes = new Set([
+        ...Object.keys(selected),
+        ...(catalog.providers || []).map((provider) => provider.type)
+      ]);
+      const types = [
+        ...Object.keys(labels).filter((type) => availableTypes.has(type)),
+        ...Array.from(availableTypes).filter((type) => !labels[type])
+      ];
+      this.services = types.map((type) => {
+        const provider = (catalog.providers || []).find(
+          (item) => item.type === type && item.namespace === selected[type]
+        );
+        return {
+          type,
+          label: labels[type] || type,
+          selected: selected[type] || null,
+          provider: provider || null,
+          status: 'loading',
+          message: '获取中'
+        };
+      });
+      this.refreshAll();
+    },
+    configure(service) {
+      window.dispatchEvent(new CustomEvent('open-provider-config', {
+        detail: { type: service.type, label: service.label }
+      }));
+    },
+    handleStatusEvent(detail) {
+      if (detail?.state) {
+        this.applyState(detail.state);
+      } else {
+        this.refreshAll();
+      }
+    },
+    applyState(state) {
+      const service = this.services.find((item) => item.type === state.type);
+      if (service) Object.assign(service, state);
+    },
+    async refreshAll() {
+      if (this.busy) return;
+      this.busy = true;
+      this.error = '';
+      try {
+        const response = await fetch('/api/v1/providers/status', {
+          headers: { Accept: 'application/json' },
+          credentials: 'same-origin'
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const returnedTypes = new Set();
+        for (const state of data.services || []) {
+          this.applyState(state);
+          returnedTypes.add(state.type);
+        }
+        for (const service of this.services) {
+          if (returnedTypes.has(service.type)) continue;
+          Object.assign(service, {
+            status: 'error',
+            message: '接口未返回该服务的状态'
+          });
+        }
+        this.loaded = true;
+      } catch (error) {
+        this.error = 'Provider 状态检查失败';
+        if (!this.loaded) {
+          for (const service of this.services) {
+            Object.assign(service, {
+              status: 'error',
+              message: '状态获取失败'
+            });
+          }
+        }
+      } finally {
+        this.busy = false;
+      }
+    },
+    statusClass(status) {
+      if (status === 'ready') return 'bg-emerald-500';
+      if (status === 'loading') return 'animate-pulse bg-slate-300';
+      if (status === 'setting_up') return 'bg-amber-400';
+      if (status === 'unconfigured') return 'bg-slate-300';
+      return 'bg-red-500';
+    },
+    statusTextClass(status) {
+      if (status === 'ready') return 'text-emerald-700';
+      if (status === 'loading') return 'text-slate-400';
+      if (status === 'setting_up') return 'text-amber-700';
+      if (status === 'unconfigured') return 'text-slate-400';
+      return 'text-red-600';
+    },
+    stateText(status) {
+      return {
+        ready: '可用',
+        loading: '获取中',
+        setting_up: '初始化中',
+        unavailable: '不可用',
+        error: '异常',
+        unconfigured: '未配置'
+      }[status] || '未检查';
+    }
+  };
+}
+</script>

@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cd "$SCRIPT_DIR"
+
+if [ -x "$SCRIPT_DIR/.venv/bin/cjdb" ]; then
+  exec "$SCRIPT_DIR/.venv/bin/cjdb" "$@"
+fi
+
+export UV_CACHE_DIR="${UV_CACHE_DIR:-$SCRIPT_DIR/.data/uv-cache}"
+exec uv run --no-dev cjdb "$@"

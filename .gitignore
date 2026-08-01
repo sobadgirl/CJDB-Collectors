@@ -1,0 +1,17 @@
+.DS_Store
+.data/
+logs/
+config.yaml
+.venv/
+*.db
+*.sqlite
+*.sqlite3
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.py[cod]
+htmlcov/
+.coverage
+dist/
+build/
+*.egg-info/

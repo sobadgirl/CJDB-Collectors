@@ -1,0 +1,223 @@
+<div x-data='providerRuntimeStatus({{ provider_catalog|tojson }}, {{ provider_status_types|tojson }}, "{{ provider_status_title }}")'
+     x-init="init()"
+     @provider-status-updated.window="handleStatusEvent($event.detail)"
+     @click.outside="open=false"
+     @keydown.escape.window="open=false"
+     @mouseenter="open=true"
+     @mouseleave="open=false"
+     class="relative">
+  <button type="button"
+          class="group inline-flex min-h-10 items-center gap-2 rounded-lg border bg-white px-3 text-left shadow-sm transition hover:border-slate-400"
+          :class="cardClass"
+          @focus="open=true"
+          @click="open=true; refreshAll()">
+    <span class="size-2.5 shrink-0 rounded-full" :class="dotClass"></span>
+    <span class="text-sm font-medium text-slate-700" x-text="title"></span>
+    <span class="text-xs font-semibold" :class="textClass" x-text="summaryLabel"></span>
+  </button>
+
+  <div class="fixed inset-x-4 top-36 z-50 rounded-lg border border-slate-200 bg-white p-4 text-sm shadow-xl sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:w-96"
+       x-cloak
+       x-show="open">
+    <div class="mb-3 flex items-start justify-between gap-3">
+      <div>
+        <div class="font-semibold text-slate-900" x-text="title"></div>
+        <div class="mt-0.5 text-xs text-slate-500">当前服务使用的 Provider 状态</div>
+      </div>
+      <button type="button"
+              class="btn btn-ghost btn-xs"
+              :disabled="busy"
+              @click.stop="refreshAll()">刷新</button>
+    </div>
+
+    <div class="divide-y divide-slate-100 rounded-lg border border-slate-100">
+      <template x-for="service in services" :key="service.type">
+        <div class="flex min-h-16 items-center gap-3 px-3 py-2.5">
+          <span class="size-2.5 shrink-0 rounded-full"
+                :class="statusClass(service.status)"></span>
+          <div class="min-w-0 flex-1">
+            <div class="truncate font-medium text-slate-800" x-text="service.label"></div>
+            <div class="mt-0.5 truncate text-xs text-slate-500"
+                 x-text="service.provider?.name || '未选择'"></div>
+          </div>
+          <button type="button"
+                  class="btn btn-ghost btn-xs shrink-0"
+                  :data-provider-type="service.type"
+                  @click.stop="configure(service)">配置</button>
+        </div>
+      </template>
+    </div>
+
+    <div class="mt-3 flex items-center justify-between gap-3">
+      <span class="text-xs text-slate-400" x-show="busy">正在获取状态</span>
+      <span class="text-xs text-slate-400" x-show="!busy" x-text="lastCheckedText"></span>
+      <span class="text-xs text-red-600" x-show="error" x-text="error"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+function providerRuntimeStatus(catalog, serviceTypes, title) {
+  const labels = {
+    douyin_aweme_collect: '抖音数据采集',
+    xiaohongshu_aweme_collect: '小红书数据采集',
+    wechat_channels_aweme_collect: '视频号数据采集',
+    wechat_mp_aweme_collect: '公众号数据采集',
+    xiaohongshu_comment_collect: '小红书评论下载',
+    account_collect: '账号数据采集',
+    video_transcription: '视频转写'
+  };
+
+  return {
+    catalog,
+    serviceTypes,
+    title,
+    open: false,
+    busy: false,
+    loaded: false,
+    error: '',
+    checkedAt: null,
+    services: [],
+    init() {
+      const selected = catalog.type
+        ? { [catalog.type]: catalog.selected }
+        : { ...(catalog.selected || {}) };
+      this.services = this.serviceTypes.map((type) => {
+        const provider = (catalog.providers || []).find(
+          (item) => item.type === type && item.namespace === selected[type]
+        );
+        return {
+          type,
+          label: labels[type] || type,
+          selected: selected[type] || null,
+          provider: provider || null,
+          status: 'loading',
+          message: '获取中'
+        };
+      });
+      this.refreshAll();
+    },
+    configure(service) {
+      this.open = false;
+      window.dispatchEvent(new CustomEvent('open-provider-config', {
+        detail: { type: service.type, label: service.label }
+      }));
+    },
+    handleStatusEvent(detail) {
+      if (detail?.state) {
+        const service = this.services.find(
+          (item) => item.type === detail.state.type
+        );
+        if (service) Object.assign(service, detail.state);
+      } else {
+        this.refreshAll();
+      }
+    },
+    async refreshAll() {
+      if (this.busy) return;
+      this.busy = true;
+      this.error = '';
+      try {
+        const response = await fetch('/api/v1/providers/status', {
+          headers: { Accept: 'application/json' },
+          credentials: 'same-origin'
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const returnedTypes = new Set();
+        for (const state of data.services || []) {
+          const service = this.services.find((item) => item.type === state.type);
+          if (!service) continue;
+          Object.assign(service, state);
+          returnedTypes.add(state.type);
+        }
+        for (const service of this.services) {
+          if (returnedTypes.has(service.type)) continue;
+          Object.assign(service, {
+            status: 'error',
+            message: '接口未返回该服务的状态'
+          });
+        }
+        this.loaded = true;
+        this.checkedAt = new Date();
+      } catch (error) {
+        this.error = '状态检查失败';
+        if (!this.loaded) {
+          for (const service of this.services) {
+            Object.assign(service, {
+              status: 'error',
+              message: '状态获取失败'
+            });
+          }
+        }
+      } finally {
+        this.busy = false;
+      }
+    },
+    get aggregateStatus() {
+      if (!this.services.length) return 'loading';
+      if (this.services.some((service) => service.status === 'loading')) {
+        return 'loading';
+      }
+      if (this.services.some((service) => service.status === 'setting_up')) {
+        return 'setting_up';
+      }
+      if (this.services.every((service) => service.status === 'ready')) {
+        return 'ready';
+      }
+      if (this.services.some((service) => ['unavailable', 'error'].includes(service.status))) {
+        return 'unavailable';
+      }
+      if (this.services.some((service) => service.status === 'unconfigured')) {
+        return 'unconfigured';
+      }
+      return 'error';
+    },
+    get summaryLabel() {
+      return {
+        ready: '可用',
+        loading: '获取中',
+        setting_up: '初始化中',
+        unavailable: '服务异常',
+        error: '获取失败',
+        unconfigured: '未配置'
+      }[this.aggregateStatus] || '获取失败';
+    },
+    get cardClass() {
+      return {
+        ready: 'border-emerald-200',
+        loading: 'border-slate-200',
+        setting_up: 'border-amber-200',
+        unavailable: 'border-red-200',
+        error: 'border-red-200',
+        unconfigured: 'border-slate-200'
+      }[this.aggregateStatus] || 'border-slate-200';
+    },
+    get dotClass() {
+      return this.statusClass(this.aggregateStatus);
+    },
+    get textClass() {
+      return {
+        ready: 'text-emerald-700',
+        loading: 'text-slate-500',
+        setting_up: 'text-amber-700',
+        unavailable: 'text-red-700',
+        error: 'text-red-700',
+        unconfigured: 'text-slate-500'
+      }[this.aggregateStatus] || 'text-slate-500';
+    },
+    get lastCheckedText() {
+      return this.checkedAt
+        ? `检查于 ${this.checkedAt.toLocaleTimeString()}`
+        : '等待检查';
+    },
+    statusClass(status) {
+      if (status === 'ready') return 'bg-emerald-500';
+      if (status === 'loading') return 'animate-pulse bg-slate-300';
+      if (status === 'setting_up') return 'bg-amber-400';
+      if (status === 'unconfigured') return 'bg-slate-300';
+      return 'bg-red-500';
+    }
+  };
+}
+</script>
