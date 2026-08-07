@@ -7,146 +7,175 @@ from sqlmodel import select
 
 from cjdb_collectors.models import (
     Account,
-    AccountDataStorerSync,
     Aweme,
-    AwemeDataStorerSync,
-    DataStorer,
-    DataStorerStatus,
-    DefaultDataStorer,
-    Group,
-    GroupAccount,
-    GroupAweme,
-    GroupDataStorer,
-    GroupStatus,
+    Project,
+    ProjectAccount,
+    ProjectAweme,
+    ProjectProviderSelection,
+    ProjectStatus,
+    ProjectVideoTranscription,
+    Provider,
+    ProviderSync,
+    SyncObjectType,
+    VideoTranscription,
 )
+from cjdb_collectors.domains.provider import ProviderType
 
 
-def target_store_ids(session, group_ids: Iterable[UUID] = ()) -> set[UUID]:
-    targets = set(
+def target_provider_ids(
+    session,
+    project_ids: Iterable[UUID] = (),
+    provider_types: Iterable[ProviderType | str] = (),
+) -> set[UUID]:
+    selected_projects = set(project_ids)
+    selected_types = {ProviderType(value).value for value in provider_types}
+    if not selected_projects or not selected_types:
+        return set()
+    return set(
         session.exec(
-            select(DefaultDataStorer.data_storer_id)
-            .join(
-                DataStorer,
-                DataStorer.id == DefaultDataStorer.data_storer_id,
+            select(ProjectProviderSelection.provider_id)
+            .join(Project, Project.id == ProjectProviderSelection.project_id)
+            .join(Provider, Provider.id == ProjectProviderSelection.provider_id)
+            .where(
+                ProjectProviderSelection.project_id.in_(selected_projects),
+                ProjectProviderSelection.provider_type.in_(selected_types),
+                Project.status == ProjectStatus.ACTIVE,
+                Project.deleted_at.is_(None),
+                Provider.status != "disabled",
             )
-            .where(DataStorer.status != DataStorerStatus.DISABLED)
         ).all()
     )
-    selected_groups = set(group_ids)
-    if selected_groups:
-        targets.update(
-            session.exec(
-                select(GroupDataStorer.data_storer_id)
-                .join(Group, Group.id == GroupDataStorer.group_id)
-                .join(
-                    DataStorer,
-                    DataStorer.id == GroupDataStorer.data_storer_id,
-                )
-                .where(
-                    GroupDataStorer.group_id.in_(selected_groups),
-                    Group.status == GroupStatus.ACTIVE,
-                    Group.deleted_at.is_(None),
-                    DataStorer.status != DataStorerStatus.DISABLED,
-                )
-            ).all()
+
+
+def _ensure_relations(
+    session,
+    object_type: SyncObjectType,
+    subject_id: UUID,
+    targets: set[UUID],
+) -> None:
+    relations = list(
+        session.exec(
+            select(ProviderSync).where(
+                ProviderSync.object_type == object_type,
+                ProviderSync.object_id == subject_id,
+            )
+        ).all()
+    )
+    existing = {relation.provider_id for relation in relations}
+    for relation in relations:
+        relation.enabled = relation.provider_id in targets
+        session.add(relation)
+    for provider_id in targets - existing:
+        session.add(
+            ProviderSync(
+                object_type=object_type,
+                object_id=subject_id,
+                provider_id=provider_id,
+            )
         )
-    return targets
 
 
 def ensure_aweme_store_relations(
     session,
     aweme_id: UUID,
-    group_ids: Iterable[UUID] | None = None,
+    project_ids: Iterable[UUID] | None = None,
 ) -> None:
-    if group_ids is None:
-        group_ids = session.exec(
-            select(GroupAweme.group_id).where(GroupAweme.aweme_id == aweme_id)
+    if project_ids is None:
+        project_ids = session.exec(
+            select(ProjectAweme.project_id).where(ProjectAweme.aweme_id == aweme_id)
         ).all()
-    targets = target_store_ids(session, group_ids)
-    relations = list(
-        session.exec(
-            select(AwemeDataStorerSync).where(
-                AwemeDataStorerSync.aweme_id == aweme_id
-            )
-        ).all()
+    _ensure_relations(
+        session,
+        SyncObjectType.AWEME,
+        aweme_id,
+        target_provider_ids(session, project_ids, [ProviderType.STORE_AWEME]),
     )
-    existing = {relation.data_storer_id for relation in relations}
-    for relation in relations:
-        relation.enabled = relation.data_storer_id in targets
-        session.add(relation)
-    for store_id in targets - existing:
-        session.add(
-            AwemeDataStorerSync(
-                aweme_id=aweme_id,
-                data_storer_id=store_id,
-            )
-        )
 
 
 def ensure_account_store_relations(
     session,
     account_id: UUID,
-    group_ids: Iterable[UUID] | None = None,
+    project_ids: Iterable[UUID] | None = None,
 ) -> None:
-    if group_ids is None:
-        group_ids = session.exec(
-            select(GroupAccount.group_id).where(
-                GroupAccount.account_id == account_id
+    if project_ids is None:
+        project_ids = session.exec(
+            select(ProjectAccount.project_id).where(
+                ProjectAccount.account_id == account_id
             )
         ).all()
-    targets = target_store_ids(session, group_ids)
-    relations = list(
-        session.exec(
-            select(AccountDataStorerSync).where(
-                AccountDataStorerSync.account_id == account_id
-            )
-        ).all()
+    _ensure_relations(
+        session,
+        SyncObjectType.ACCOUNT,
+        account_id,
+        target_provider_ids(session, project_ids, [ProviderType.STORE_ACCOUNT]),
     )
-    existing = {relation.data_storer_id for relation in relations}
-    for relation in relations:
-        relation.enabled = relation.data_storer_id in targets
-        session.add(relation)
-    for store_id in targets - existing:
-        session.add(
-            AccountDataStorerSync(
-                account_id=account_id,
-                data_storer_id=store_id,
-            )
-        )
 
 
-def ensure_group_store_relations(
+def ensure_transcription_store_relations(
     session,
-    group_id: UUID,
+    transcription_id: UUID,
+    project_ids: Iterable[UUID] | None = None,
+) -> None:
+    if project_ids is None:
+        project_ids = session.exec(
+            select(ProjectVideoTranscription.project_id).where(
+                ProjectVideoTranscription.video_transcription_id == transcription_id
+            )
+        ).all()
+    _ensure_relations(
+        session,
+        SyncObjectType.VIDEO_TRANSCRIPTION,
+        transcription_id,
+        target_provider_ids(
+            session,
+            project_ids,
+            [ProviderType.STORE_VIDEO_TRANSCRIPTION],
+        ),
+    )
+
+
+def ensure_project_store_relations(
+    session,
+    project_id: UUID,
     *,
     aweme_ids: Iterable[UUID] | None = None,
     account_ids: Iterable[UUID] | None = None,
+    transcription_ids: Iterable[UUID] | None = None,
 ) -> None:
     if aweme_ids is None:
         aweme_ids = session.exec(
-            select(GroupAweme.aweme_id).where(GroupAweme.group_id == group_id)
+            select(ProjectAweme.aweme_id).where(ProjectAweme.project_id == project_id)
         ).all()
     for aweme_id in aweme_ids:
         ensure_aweme_store_relations(session, aweme_id)
 
     if account_ids is None:
         account_ids = session.exec(
-            select(GroupAccount.account_id).where(
-                GroupAccount.group_id == group_id
+            select(ProjectAccount.account_id).where(
+                ProjectAccount.project_id == project_id
             )
         ).all()
     for account_id in account_ids:
         ensure_account_store_relations(session, account_id)
 
+    if transcription_ids is None:
+        transcription_ids = session.exec(
+            select(ProjectVideoTranscription.video_transcription_id).where(
+                ProjectVideoTranscription.project_id == project_id
+            )
+        ).all()
+    for transcription_id in transcription_ids:
+        ensure_transcription_store_relations(session, transcription_id)
+
 
 def ensure_default_store_relations(session) -> None:
-    aweme_ids = session.exec(
+    for aweme_id in session.exec(
         select(Aweme.id).where(Aweme.deleted_at.is_(None))
-    ).all()
-    account_ids = session.exec(
-        select(Account.id).where(Account.deleted_at.is_(None))
-    ).all()
-    for aweme_id in aweme_ids:
+    ).all():
         ensure_aweme_store_relations(session, aweme_id)
-    for account_id in account_ids:
+    for account_id in session.exec(
+        select(Account.id).where(Account.deleted_at.is_(None))
+    ).all():
         ensure_account_store_relations(session, account_id)
+    for transcription_id in session.exec(select(VideoTranscription.id)).all():
+        ensure_transcription_store_relations(session, transcription_id)

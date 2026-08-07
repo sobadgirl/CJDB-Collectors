@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 {% block title %}设置 · 超级对标{% endblock %}
 {% block content %}
-<section class="mx-auto max-w-7xl space-y-6 p-4 sm:p-6"
-         x-data="{ storerOpen: false, groupOpen: false }">
+<section class="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
   <div>
     <h1 class="text-2xl font-semibold">设置</h1>
-    <p class="text-sm text-slate-500">服务、Data Storer、分组与后台进程。</p>
+    <p class="text-sm text-slate-500">服务、Data Storer、项目与后台进程。</p>
   </div>
 
   <div class="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">
@@ -42,8 +41,9 @@
   <div class="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">
     <h2 class="text-lg font-semibold text-slate-950">子进程并发数</h2>
     <div class="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-      {% for task_name, task_config in runtime_config.worker_tasks.items() %}
-      <form action="/actions/config"
+      {% for task_name, task_settings in runtime_settings.worker_tasks.items() %}
+      {% if task_name != "comment_collect" %}
+      <form action="/actions/settings"
             method="post"
             class="rounded-lg border border-slate-200 p-3">
         <div class="mb-2 break-all text-xs font-medium">{{ task_name }}</div>
@@ -54,9 +54,10 @@
                type="number"
                min="0"
                name="value"
-               value="{{ task_config.process_limit }}">
+               value="{{ task_settings.process_limit }}">
         <button class="btn btn-sm mt-2 w-full">保存</button>
       </form>
+      {% endif %}
       {% endfor %}
     </div>
     <p class="mt-3 text-xs text-slate-500">设置为 0 会停止派生该类型的新子进程。</p>
@@ -64,7 +65,7 @@
 
   <div class="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">
     <h2 class="text-lg font-semibold text-slate-950">日志存储</h2>
-    <form action="/actions/config"
+    <form action="/actions/settings"
           method="post"
           class="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
       <input type="hidden" name="key" value="app.logs_dir">
@@ -72,7 +73,7 @@
         <span class="label-text mb-1.5">日志目录</span>
         <input class="input input-bordered w-full"
                name="value"
-               value="{{ runtime_config.app.logs_dir }}"
+               value="{{ runtime_settings.app.logs_dir }}"
                placeholder="./logs">
       </label>
       <button class="btn self-end">保存</button>
@@ -83,103 +84,39 @@
   </div>
 
   <div class="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">
-    <div class="flex items-center justify-between gap-3">
-      <h2 class="text-lg font-semibold text-slate-950">Notion Data Storer</h2>
-      <button class="btn btn-sm" @click="storerOpen=true">新增</button>
-    </div>
-    <div class="mt-4 grid gap-3 md:grid-cols-3">
-      {% for item in storers %}
-      <div class="rounded-lg border border-slate-200 p-4">
-        <div class="font-medium">{{ item.name }}</div>
-        <div class="mt-1 text-sm text-slate-500">{{ item.type }} · {{ item.status }}</div>
-      </div>
-      {% else %}
-      <p class="text-sm text-slate-500">尚未配置。</p>
-      {% endfor %}
-    </div>
-  </div>
-
-  <div class="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">
-    <div class="flex items-center justify-between gap-3">
-      <h2 class="text-lg font-semibold text-slate-950">分组</h2>
-      <button class="btn btn-sm" @click="groupOpen=true">新增</button>
-    </div>
-    <div class="mt-4 grid gap-3 md:grid-cols-3">
-      {% for group in groups %}
-      <form action="/actions/groups/{{ group.id }}/data-storers"
+    <h2 class="text-lg font-semibold text-slate-950">媒体存储</h2>
+    <div class="mt-4 grid gap-4 md:grid-cols-2">
+      <form action="/actions/settings"
             method="post"
             class="rounded-lg border border-slate-200 p-4">
-        <div class="mb-3 font-medium">{{ group.name }}</div>
-        <div class="space-y-2">
-          {% for item in storers %}
-          <label class="flex items-center gap-2 text-sm">
-            <input class="checkbox checkbox-sm"
-                   type="checkbox"
-                   name="data_storer_ids"
-                   value="{{ item.id }}"
-                   {% if item.id|string in group_storer_ids.get(group.id|string, []) %}checked{% endif %}>
-            {{ item.name }}
-          </label>
-          {% else %}
-          <p class="text-sm text-slate-500">请先新增 Data Storer。</p>
-          {% endfor %}
-        </div>
-        <button class="btn btn-sm mt-3">保存绑定</button>
+        <input type="hidden" name="key" value="services.media.aweme_download_dir">
+        <label class="form-control">
+          <span class="label-text mb-1.5">作品媒体目录</span>
+          <input class="input input-bordered w-full"
+                 name="value"
+                 value="{{ runtime_settings.services.media.aweme_download_dir }}"
+                 placeholder=".data/aweme-media">
+        </label>
+        <p class="mt-2 text-xs text-slate-500">按作品 platform_id 分目录保存 cover、video、photo。</p>
+        <button class="btn btn-sm mt-3">保存</button>
       </form>
-      {% else %}
-      <p class="text-sm text-slate-500">尚未创建分组。</p>
-      {% endfor %}
+      <form action="/actions/settings"
+            method="post"
+            class="rounded-lg border border-slate-200 p-4">
+        <input type="hidden" name="key" value="services.media.transcription_download_dir">
+        <label class="form-control">
+          <span class="label-text mb-1.5">独立转写下载目录</span>
+          <input class="input input-bordered w-full"
+                 name="value"
+                 value="{{ runtime_settings.services.media.transcription_download_dir }}"
+                 placeholder=".data/transcriptions">
+        </label>
+        <p class="mt-2 text-xs text-slate-500">URL 新建转写任务时，视频先下载到这里再转写。</p>
+        <button class="btn btn-sm mt-3">保存</button>
+      </form>
     </div>
   </div>
 
-  <div class="modal" :class="{ 'modal-open': storerOpen }">
-    <div class="modal-box">
-      <h3 class="mb-4 text-lg font-bold">新增 Notion Data Storer</h3>
-      <form action="/actions/data-storers" method="post" class="space-y-3">
-        <input class="input input-bordered w-full"
-               name="name"
-               placeholder="显示名称"
-               required>
-        <input class="input input-bordered w-full"
-               name="secret_ref"
-               placeholder="config.yaml secrets key，例如 notion_token"
-               required>
-        <input class="input input-bordered w-full"
-               name="database_id"
-               placeholder="Notion Database ID"
-               required>
-        <div class="modal-action">
-          <button type="button" class="btn btn-ghost" @click="storerOpen=false">取消</button>
-          <button class="btn">保存</button>
-        </div>
-      </form>
-    </div>
-    <div class="modal-backdrop" @click="storerOpen=false"></div>
-  </div>
-
-  <div class="modal" :class="{ 'modal-open': groupOpen }">
-    <div class="modal-box">
-      <h3 class="mb-4 text-lg font-bold">新增分组</h3>
-      <form action="/actions/groups" method="post" class="space-y-3">
-        <input class="input input-bordered w-full"
-               name="name"
-               placeholder="分组名称"
-               required>
-        <textarea class="textarea textarea-bordered w-full"
-                  name="description"
-                  placeholder="说明"></textarea>
-        <input class="h-11 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1.5"
-               name="color"
-               type="color"
-               value="#6366f1">
-        <div class="modal-action">
-          <button type="button" class="btn btn-ghost" @click="groupOpen=false">取消</button>
-          <button class="btn">保存</button>
-        </div>
-      </form>
-    </div>
-    <div class="modal-backdrop" @click="groupOpen=false"></div>
-  </div>
 </section>
 
 {% include "partials/provider_config_modal.html" %}

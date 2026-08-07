@@ -11,57 +11,124 @@
   <style>[x-cloak] { display: none !important; }</style>
 </head>
 <body class="min-h-screen bg-[#f6f7f9] text-base-content"
-      x-data="{ groupCreateOpen: false, sidebarOpen: false }">
+      x-data="{
+        projectCreateOpen: false,
+        sidebarOpen: false,
+        sidebarCollapsed: false,
+        storePickerOpen: {{ 'true' if request.query_params.get('store_picker') else 'false' }},
+        storeCreateOpen: false,
+        toggleSidebarCollapsed() {
+          this.sidebarCollapsed = !this.sidebarCollapsed;
+        }
+      }"
+      @open-store-picker.window="storePickerOpen=true; storeCreateOpen=false">
   <div class="flex min-h-screen">
-    <aside class="fixed inset-y-0 left-0 z-50 flex h-screen w-72 shrink-0 -translate-x-full flex-col border-r border-slate-200 bg-white px-4 py-5 shadow-xl transition-transform lg:sticky lg:top-0 lg:translate-x-0 lg:shadow-none"
-           :class="{ 'translate-x-0': sidebarOpen }">
-      <a class="mb-7 flex items-center gap-3 px-2" href="/">
-        <span class="grid size-9 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white">CJ</span>
-        <span>
-          <span class="block text-sm font-semibold leading-5 text-slate-900">超级对标</span>
-          <span class="block text-xs text-slate-400">Collectors</span>
-        </span>
-      </a>
-
-      <nav class="min-h-0 flex-1 space-y-2" aria-label="主要功能">
-        <a href="/"
-           class="group flex min-h-14 items-center gap-3 rounded-xl px-3 transition-colors
-                  {% if request.url.path == '/' %}bg-slate-900 text-white shadow-sm{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
-          <span class="grid size-9 place-items-center rounded-lg {% if request.url.path == '/' %}bg-white/10{% else %}bg-slate-100 group-hover:bg-white{% endif %}">
-            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-              <path d="M4 6.5 12 3l8 3.5-8 3.5-8-3.5Z"/><path d="m4 11 8 3.5 8-3.5M4 15.5 12 19l8-3.5"/>
-            </svg>
-          </span>
-          <span>
-            <span class="block text-sm font-semibold">数据采集</span>
-            <span class="block text-xs {% if request.url.path == '/' %}text-white/60{% else %}text-slate-400{% endif %}">作品与账号</span>
+    <aside class="fixed inset-y-0 left-0 z-50 flex h-screen w-72 shrink-0 -translate-x-full flex-col border-r border-slate-200 bg-white px-4 py-5 shadow-xl transition-all duration-200 lg:sticky lg:top-0 lg:translate-x-0 lg:shadow-none"
+           :class="{
+             'translate-x-0': sidebarOpen,
+             'lg:w-0 lg:border-r-0 lg:px-0 lg:opacity-0 lg:pointer-events-none lg:overflow-hidden': sidebarCollapsed,
+             'lg:w-72 lg:px-4 lg:opacity-100': !sidebarCollapsed
+           }"
+           :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
+      <div class="mb-7 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2">
+        <a class="flex min-w-0 items-center gap-3" href="/awemes">
+          <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white">CJ</span>
+          <span class="min-w-0">
+            <span class="block truncate text-sm font-semibold leading-5 text-slate-900">超级对标</span>
+            <span class="block truncate text-xs text-slate-400">Collectors</span>
           </span>
         </a>
-        {% block sidebar_groups %}{% endblock %}
+        {% block brand_project_switcher %}{% endblock %}
+      </div>
+
+      {% set sidebar_store_subject_type = "account" if request.url.path == "/accounts" else "video_transcription" if request.url.path == "/transcriptions" else "aweme" %}
+      {% set sidebar_project_id = request.query_params.get("project_id") %}
+      {% if not sidebar_project_id and current_project is defined and current_project %}
+        {% set sidebar_project_id = current_project.id|string %}
+      {% elif not sidebar_project_id and selected_project_ids is defined and selected_project_ids %}
+        {% set sidebar_project_id = selected_project_ids[0]|string %}
+      {% elif not sidebar_project_id and projects is defined and projects %}
+        {% set sidebar_project_id = projects[0].id|string %}
+      {% endif %}
+      <nav class="min-h-0 flex-1 space-y-2" aria-label="主要功能">
+        <a href="/awemes"
+           class="group flex min-h-14 items-center gap-3 rounded-xl px-3 transition-colors
+                  {% if request.url.path in ['/', '/awemes'] %}bg-slate-900 text-white shadow-sm{% else %}text-slate-700 hover:bg-slate-100{% endif %}"
+           title="对标作品管理">
+          <span class="grid size-9 place-items-center rounded-lg {% if request.url.path in ['/', '/awemes'] %}bg-white/10{% else %}bg-slate-100 group-hover:bg-white{% endif %}">
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M4 5.5h16M4 12h16M4 18.5h16"/><path d="M8 3.5v17M16 3.5v17"/>
+            </svg>
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm font-semibold">对标作品管理</span>
+            <span class="block text-xs {% if request.url.path in ['/', '/awemes'] %}text-white/60{% else %}text-slate-400{% endif %}">作品采集与同步</span>
+          </span>
+          {% set active_path = "/awemes" %}
+          {% set sidebar_subject_type = "aweme" %}
+          {% include "partials/sidebar_store_status.html" %}
+        </a>
+        <a href="/accounts"
+           class="group flex min-h-14 items-center gap-3 rounded-xl px-3 transition-colors
+                  {% if request.url.path == '/accounts' %}bg-slate-900 text-white shadow-sm{% else %}text-slate-700 hover:bg-slate-100{% endif %}"
+           title="对标账号管理">
+          <span class="grid size-9 place-items-center rounded-lg {% if request.url.path == '/accounts' %}bg-white/10{% else %}bg-slate-100 group-hover:bg-white{% endif %}">
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-8 0v2"/><path d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M19 8v6M22 11h-6"/>
+            </svg>
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm font-semibold">对标账号管理</span>
+            <span class="block text-xs {% if request.url.path == '/accounts' %}text-white/60{% else %}text-slate-400{% endif %}">账号采集与同步</span>
+          </span>
+          {% set active_path = "/accounts" %}
+          {% set sidebar_subject_type = "account" %}
+          {% include "partials/sidebar_store_status.html" %}
+        </a>
         <a href="/transcriptions"
            class="group flex min-h-14 items-center gap-3 rounded-xl px-3 transition-colors
-                  {% if request.url.path == '/transcriptions' %}bg-slate-900 text-white shadow-sm{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+                  {% if request.url.path == '/transcriptions' %}bg-slate-900 text-white shadow-sm{% else %}text-slate-700 hover:bg-slate-100{% endif %}"
+           title="视频文字转写">
           <span class="grid size-9 place-items-center rounded-lg {% if request.url.path == '/transcriptions' %}bg-white/10{% else %}bg-slate-100 group-hover:bg-white{% endif %}">
             <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
               <path d="M7 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="m10 9 5 3-5 3V9Z"/>
             </svg>
           </span>
-          <span>
-            <span class="block text-sm font-semibold">视频转写</span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm font-semibold">视频文字转写</span>
             <span class="block text-xs {% if request.url.path == '/transcriptions' %}text-white/60{% else %}text-slate-400{% endif %}">音视频转文字</span>
           </span>
+          {% set active_path = "/transcriptions" %}
+          {% set sidebar_subject_type = "video_transcription" %}
+          {% include "partials/sidebar_store_status.html" %}
         </a>
       </nav>
 
       <a href="/settings"
          class="mt-4 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors
-                {% if request.url.path == '/settings' %}bg-slate-100 text-slate-900{% else %}text-slate-500 hover:bg-slate-100 hover:text-slate-900{% endif %}">
+                {% if request.url.path == '/settings' %}bg-slate-100 text-slate-900{% else %}text-slate-500 hover:bg-slate-100 hover:text-slate-900{% endif %}"
+         title="系统设置">
         <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
           <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.1.37.3.72.6 1 .3.28.68.42 1.1.4h.09v4h-.09a1.7 1.7 0 0 0-1.7.6Z"/>
         </svg>
-        系统设置
+        <span>系统设置</span>
       </a>
     </aside>
+
+    <div class="sticky top-0 z-30 hidden h-screen w-10 shrink-0 items-start justify-center border-r border-slate-200 bg-white pt-5 lg:flex">
+      <button type="button"
+              class="grid size-8 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+              :aria-label="sidebarCollapsed ? '展开导航' : '折叠导航'"
+              :title="sidebarCollapsed ? '展开导航' : '折叠导航'"
+              @click="toggleSidebarCollapsed()">
+        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/>
+          <path d="M9 5v14"/>
+          <path x-show="!sidebarCollapsed" d="m16 10-2 2 2 2"/>
+          <path x-show="sidebarCollapsed" d="m14 10 2 2-2 2"/>
+        </svg>
+      </button>
+    </div>
 
     <div class="min-w-0 flex-1">
       <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden">
@@ -70,7 +137,7 @@
             <path d="M4 7h16M4 12h16M4 17h16"/>
           </svg>
         </button>
-        <a class="text-sm font-semibold text-slate-900" href="/">超级对标</a>
+        <a class="text-sm font-semibold text-slate-900" href="/awemes">超级对标</a>
         <a class="btn btn-ghost btn-square" href="/settings" aria-label="系统设置">
           <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
             <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.1.37.3.72.6 1 .3.28.68.42 1.1.4h.09v4h-.09a1.7 1.7 0 0 0-1.7.6Z"/>
@@ -83,14 +150,14 @@
   <button type="button" class="fixed inset-0 z-40 bg-slate-950/35 lg:hidden"
           x-cloak x-show="sidebarOpen" aria-label="关闭导航" @click="sidebarOpen=false"></button>
 
-  <div class="modal" :class="{ 'modal-open': groupCreateOpen }">
+	  <div class="modal" :class="{ 'modal-open': projectCreateOpen }">
     <div class="modal-box max-w-md">
-      <h3 class="text-lg font-bold">创建分组</h3>
-      <p class="mt-1 text-sm text-slate-500">用分组整理不同主题的采集内容。</p>
-      <form method="post" action="/actions/groups" class="mt-5 space-y-4">
-        <input type="hidden" name="next_url" value="/">
+      <h3 class="text-lg font-bold">创建项目</h3>
+      <p class="mt-1 text-sm text-slate-500">用项目组织同一个对标目标下的账号、作品和同步配置。</p>
+      <form method="post" action="/actions/projects" class="mt-5 space-y-4">
+        <input type="hidden" name="next_url" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
         <label class="form-control">
-          <span class="label-text mb-1.5">分组名称</span>
+          <span class="label-text mb-1.5">项目名称</span>
           <input class="input input-bordered w-full" name="name" required maxlength="80" autofocus>
         </label>
         <label class="form-control">
@@ -98,14 +165,251 @@
           <input class="h-11 w-full cursor-pointer rounded-lg border border-base-300 bg-white p-1.5" type="color" name="color" value="#64748b">
         </label>
         <div class="modal-action">
-          <button type="button" class="btn btn-ghost" @click="groupCreateOpen=false">取消</button>
-          <button class="btn bg-slate-900 text-white hover:bg-slate-700">创建分组</button>
+          <button type="button" class="btn btn-ghost" @click="projectCreateOpen=false">取消</button>
+          <button class="btn bg-slate-900 text-white hover:bg-slate-700">创建项目</button>
         </div>
       </form>
     </div>
-    <div class="modal-backdrop" @click="groupCreateOpen=false"></div>
-  </div>
-  <script>
+    <div class="modal-backdrop" @click="projectCreateOpen=false"></div>
+	  </div>
+	      {% include "partials/store_connector_modals.html" %}
+      <div x-data="logModalManager()"
+           x-cloak
+           class="modal z-[120]"
+           :class="{ 'modal-open': open }"
+           @open-log-modal.window="openFor($event.detail)">
+        <div class="modal-box flex h-[min(42rem,calc(100dvh-2rem))] w-[min(58rem,calc(100vw-2rem))] max-w-none flex-col overflow-hidden p-0">
+          <div class="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+            <div class="min-w-0">
+              <h3 class="truncate text-lg font-semibold text-slate-950" x-text="title || '运行日志'"></h3>
+              <div class="mt-1 truncate text-xs text-slate-500" x-text="path || '等待读取日志'"></div>
+            </div>
+            <div class="flex shrink-0 items-center gap-1">
+              <button type="button"
+	                      class="btn btn-ghost btn-sm"
+	                      :disabled="loading"
+	                      @click="load(false, true)">刷新</button>
+	              <span class="inline-flex items-center gap-1 px-2 text-xs text-emerald-500"
+	                    x-show="pollTimer">
+	                <span class="size-1.5 rounded-full bg-emerald-500"></span>
+	                实时
+	              </span>
+              <button type="button"
+                      class="btn btn-ghost btn-sm"
+                      x-show="!following && lines.length"
+                      @click="scrollToBottom()">最新</button>
+              <button type="button"
+                      class="btn btn-ghost btn-sm btn-square"
+                      aria-label="关闭"
+                      @click="close()">
+                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="m6 6 12 12M18 6 6 18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="min-h-0 flex-1 bg-slate-950">
+            <div class="h-full overflow-y-auto p-4 font-mono text-xs leading-5 text-slate-100"
+                 x-ref="panel"
+                 @scroll.passive="handleScroll($event)">
+              <div class="pb-3 text-center text-slate-500"
+                   x-show="loading && hasMore">正在加载更早日志</div>
+              <template x-for="line in lines" :key="line.index">
+                <div class="whitespace-pre-wrap break-all" x-text="line.text || ' '"></div>
+              </template>
+              <div class="grid h-full min-h-40 place-items-center text-slate-500"
+                   x-show="!loading && !lines.length && !error">暂无日志</div>
+              <div class="grid h-full min-h-40 place-items-center text-red-300"
+                   x-show="error"
+                   x-text="error"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-backdrop" @click="close()"></div>
+      </div>
+		  <script>
+	    function logModalManager() {
+	      return {
+	        open: false,
+	        title: '运行日志',
+	        url: '',
+	        path: '',
+	        lines: [],
+	        start: 0,
+	        total: 0,
+	        hasMore: false,
+	        loading: false,
+	        following: true,
+	        error: '',
+	        pollTimer: null,
+	        openFor(detail = {}) {
+	          if (!detail.url) return;
+	          this.stopPolling();
+	          this.title = detail.title || '运行日志';
+	          this.url = detail.url;
+	          this.path = '';
+	          this.lines = [];
+	          this.start = 0;
+	          this.total = 0;
+	          this.hasMore = false;
+	          this.loading = false;
+	          this.following = true;
+	          this.error = '';
+	          this.open = true;
+	          this.load(false, true).then(() => this.startPolling());
+	        },
+	        close() {
+	          this.stopPolling();
+	          this.open = false;
+	        },
+	        startPolling() {
+	          this.stopPolling();
+	          this.pollTimer = window.setInterval(() => {
+	            if (!this.open || !this.url) return;
+	            this.load(false, this.following, { silent: true });
+	          }, 1500);
+	        },
+	        stopPolling() {
+	          if (this.pollTimer) window.clearInterval(this.pollTimer);
+	          this.pollTimer = null;
+	        },
+	        async load(older = false, scrollToBottom = false, options = {}) {
+	          if (!this.url || this.loading) return;
+	          if (!options.silent) this.loading = true;
+	          this.error = '';
+	          const panel = this.$refs.panel;
+	          const previousHeight = panel?.scrollHeight || 0;
+	          try {
+	            const params = new URLSearchParams({ limit: '240' });
+	            if (older && this.start > 0) params.set('before', String(this.start));
+	            const separator = this.url.includes('?') ? '&' : '?';
+	            const response = await fetch(`${this.url}${separator}${params}`, {
+	              headers: { Accept: 'application/json' },
+	              credentials: 'same-origin'
+	            });
+	            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+	            const data = await response.json();
+	            this.path = data.path || '';
+	            const incoming = data.lines || [];
+	            const lastKnown = this.lines.at(-1)?.index ?? -1;
+	            if (data.total <= lastKnown) {
+	              this.lines = incoming;
+	            } else {
+	              const merged = new Map(this.lines.map((line) => [line.index, line]));
+	              for (const line of incoming) merged.set(line.index, line);
+	              this.lines = Array.from(merged.values()).sort((left, right) => left.index - right.index);
+	            }
+	            this.start = this.lines[0]?.index ?? 0;
+	            this.total = data.total || 0;
+	            this.hasMore = this.start > 0;
+	            await this.$nextTick();
+	            if (older && panel) {
+	              panel.scrollTop = panel.scrollHeight - previousHeight;
+	            } else if (scrollToBottom || this.following) {
+	              this.scrollToBottom();
+	            }
+	          } catch (error) {
+	            this.error = `日志读取失败：${error.message}`;
+	          } finally {
+	            if (!options.silent) this.loading = false;
+	          }
+	        },
+	        handleScroll(event) {
+	          const panel = event.currentTarget;
+	          const distance = panel.scrollHeight - panel.scrollTop - panel.clientHeight;
+	          this.following = distance < 32;
+	          if (panel.scrollTop < 24 && this.hasMore && !this.loading) {
+	            this.load(true, false);
+	          }
+	        },
+	        scrollToBottom() {
+	          this.$nextTick(() => {
+	            const panel = this.$refs.panel;
+	            if (panel) panel.scrollTop = panel.scrollHeight;
+	            this.following = true;
+	          });
+	        }
+	      };
+	    }
+
+	    window.cjdbRefreshDisableCount = window.cjdbRefreshDisableCount || 0;
+    window.disableRefresh = function disableRefresh() {
+      window.cjdbRefreshDisableCount += 1;
+    };
+    window.enableRefresh = function enableRefresh() {
+      window.cjdbRefreshDisableCount = Math.max(0, window.cjdbRefreshDisableCount - 1);
+    };
+    window.isRefreshDisabled = function isRefreshDisabled() {
+      return window.cjdbRefreshDisableCount > 0;
+    };
+
+    window.copyText = async function copyText(value) {
+      const text = String(value || '');
+      if (!text) return false;
+      if (window.copyTextFallback(text)) return true;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (_) {
+        // Fall back below for browsers that block Clipboard API outside secure contexts.
+      }
+      return false;
+    };
+
+    window.copyTextFallback = function copyTextFallback(text) {
+      const input = document.createElement('textarea');
+      input.value = text;
+      input.setAttribute('readonly', '');
+      input.style.position = 'fixed';
+      input.style.left = '-9999px';
+      input.style.top = '0';
+      document.body.appendChild(input);
+      input.focus();
+      input.select();
+      input.setSelectionRange(0, input.value.length);
+      let copied = false;
+      try {
+        copied = document.execCommand('copy');
+      } finally {
+        document.body.removeChild(input);
+      }
+      return copied;
+    };
+
+    window.copyPath = async function copyPath(button, value) {
+      const copied = await window.copyText(value);
+      if (!button) return copied;
+      const originalTitle = button.getAttribute('title') || '复制路径';
+      button.setAttribute('title', copied ? '已复制' : '复制失败');
+      button.setAttribute('aria-label', copied ? '已复制' : '复制失败');
+      button.dataset.copied = copied ? 'true' : 'false';
+      setTimeout(() => {
+        button.setAttribute('title', originalTitle);
+        button.setAttribute('aria-label', originalTitle);
+        delete button.dataset.copied;
+      }, 1200);
+      return copied;
+    };
+
+    function captureDataListScroll(target) {
+      const scroller = target?.querySelector('.overflow-auto');
+      if (!scroller) return null;
+      return {
+        left: scroller.scrollLeft,
+        top: scroller.scrollTop
+      };
+    }
+
+    function restoreDataListScroll(target, position) {
+      if (!position) return;
+      const scroller = target?.querySelector('.overflow-auto');
+      if (!scroller) return;
+      scroller.scrollLeft = position.left;
+      scroller.scrollTop = position.top;
+    }
+
     document.addEventListener('submit', async (event) => {
       const form = event.target.closest('form[data-async-list-action]');
       if (!form) return;
@@ -119,16 +423,19 @@
 
       const submitter = event.submitter;
       if (submitter) submitter.disabled = true;
+      const scrollPosition = captureDataListScroll(target);
       try {
+        const formData = new FormData(form);
         const response = await fetch(form.action, {
           method: form.method || 'POST',
-          body: new FormData(form),
+          body: formData,
           headers: { 'HX-Request': 'true' },
           credentials: 'same-origin'
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         target.innerHTML = await response.text();
         if (window.htmx) window.htmx.process(target);
+        requestAnimationFrame(() => restoreDataListScroll(target, scrollPosition));
       } finally {
         if (submitter) submitter.disabled = false;
       }

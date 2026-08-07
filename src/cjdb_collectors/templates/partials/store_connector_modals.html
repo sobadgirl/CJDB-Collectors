@@ -1,0 +1,611 @@
+{% from "partials/ui_select.html" import ui_single_select %}
+<div x-data='storeConnectorManager({{ sidebar_store_subject_type|tojson }}, {{ sidebar_project_id|tojson }})'>
+  <div class="modal" :class="{ 'modal-open': storePickerOpen }">
+    <div class="modal-box flex h-[min(38rem,calc(100dvh-2rem))] min-h-0 w-[min(56rem,calc(100vw-2rem))] max-w-none flex-col overflow-hidden p-0">
+      <div class="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
+        <div>
+          <h3 class="text-lg font-semibold text-slate-950">Store Provider</h3>
+          <p class="mt-1 text-sm text-slate-500" x-text="storeLabel"></p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="关闭" @click="storePickerOpen=false">
+          <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
+        <div x-show="storePickerMode === 'select'" class="space-y-3">
+          <div class="flex items-center gap-2">
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-medium text-slate-800">已添加的存储源</div>
+              <div class="mt-0.5 text-xs text-slate-500">可同时启用多个 Provider</div>
+            </div>
+            <div class="relative shrink-0"
+                 @mouseenter="addMenuOpen=true"
+                 @mouseleave="addMenuOpen=false">
+              <button type="button"
+                      class="btn btn-square btn-outline text-xl"
+                      aria-label="添加 Provider"
+                      title="添加 Provider"
+                      @click="addMenuOpen=!addMenuOpen">+</button>
+              <div class="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-lg border border-slate-200 bg-white p-1.5 shadow-xl"
+                   x-cloak x-show="addMenuOpen">
+                <button type="button"
+                        class="block w-full rounded-md px-3 py-2.5 text-left text-sm hover:bg-slate-100"
+                        @click="startCreate()">新建 Provider</button>
+                <button type="button"
+                        class="block w-full rounded-md px-3 py-2.5 text-left text-sm hover:bg-slate-100"
+                        @click="loadImportable()">从其他项目导入 Provider</button>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-2" x-show="stores.length">
+            <template x-for="item in stores" :key="`store-${item.provider_id || item.id}`">
+              <div class="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <input type="checkbox"
+                       class="checkbox checkbox-sm"
+                       :checked="isStoreSelected(item)"
+                       :disabled="saving"
+                       :aria-label="`启用 ${item.name}`"
+                       @change="toggleStore(item, $event.target.checked)">
+                <span class="size-2.5 rounded-full"
+                      :class="item.status === 'ready' ? 'bg-emerald-500' : (['error', 'unavailable', 'needs_attention'].includes(item.status) ? 'bg-amber-400' : 'bg-slate-300')"></span>
+	                <span class="min-w-0 flex-1">
+	                  <span class="block truncate font-medium text-slate-900" x-text="item.name"></span>
+	                  <span class="block text-xs text-slate-500" x-text="stateText(item.status)"></span>
+	                </span>
+	                <span class="badge badge-sm" x-text="isStoreSelected(item) ? '已启用' : '未启用'"></span>
+	                <button type="button"
+	                        class="btn btn-ghost btn-xs btn-square"
+	                        :aria-label="`${item.name} 运行日志`"
+	                        :title="`${item.name} 运行日志`"
+	                        @click.stop="openLogs(item)">
+	                  <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+	                    <path d="M8 6h11M8 12h11M8 18h11"/>
+	                    <path d="M4 6h.01M4 12h.01M4 18h.01"/>
+	                  </svg>
+	                </button>
+	                <button type="button" class="btn btn-ghost btn-xs" @click="startEdit(item)">配置</button>
+	              </div>
+	            </template>
+          </div>
+          <div class="rounded-lg border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400"
+               x-show="!stores.length">当前项目还没有 Provider，请点击右侧 + 添加</div>
+        </div>
+
+        <div x-show="storePickerMode === 'import'" class="space-y-3">
+          <button type="button" class="btn btn-ghost btn-sm" @click="storePickerMode='select'">← 返回</button>
+          <div class="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200"
+               x-show="importProviders.length">
+            <template x-for="item in importProviders" :key="`import-${item.id}`">
+              <div class="flex items-center gap-3 px-4 py-3">
+                <div class="min-w-0 flex-1">
+                  <div class="truncate font-medium text-slate-900" x-text="item.name"></div>
+                  <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                    <span class="text-xs text-slate-500">所属项目</span>
+                    <template x-for="project in item.projects || []" :key="project.id">
+                      <span class="badge badge-ghost badge-sm" x-text="project.name"></span>
+                    </template>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-sm" @click="importProvider(item)">导入</button>
+              </div>
+            </template>
+          </div>
+          <div class="rounded-lg border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400"
+               x-show="!importProviders.length">没有可从其他项目导入的 Provider</div>
+        </div>
+      </div>
+      <div class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4 sm:px-6">
+        <button type="button" class="btn border-slate-900 bg-slate-900 text-white hover:border-slate-700 hover:bg-slate-700" @click="storePickerOpen=false">完成</button>
+      </div>
+    </div>
+    <div class="modal-backdrop" @click="storePickerOpen=false"></div>
+  </div>
+
+  <div class="modal" :class="{ 'modal-open': storeCreateOpen }">
+    <div class="modal-box flex h-[min(38rem,calc(100dvh-2rem))] min-h-0 w-[min(56rem,calc(100vw-2rem))] max-w-none flex-col overflow-hidden p-0">
+      <div class="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
+	        <div class="min-w-0">
+	          <h3 class="text-lg font-semibold text-slate-950" x-text="editingStore ? '配置 Provider' : '新建 Provider'"></h3>
+	          <p class="mt-1 text-sm text-slate-500" x-text="storeLabel"></p>
+	        </div>
+	        <div class="flex shrink-0 items-center gap-1">
+	          <button type="button"
+	                  class="btn btn-ghost btn-sm btn-square"
+	                  x-show="currentLogProviderId"
+	                  :aria-label="`${formName || 'Store Provider'} setup 日志`"
+	                  :title="`${formName || 'Store Provider'} setup 日志`"
+	                  @click="openLogsById(currentLogProviderId, `${formName || 'Store Provider'} setup 日志`, 'setup')">
+	            <svg class="size-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+	              <path d="M8 6h11M8 12h11M8 18h11"/>
+	              <path d="M4 6h.01M4 12h.01M4 18h.01"/>
+	            </svg>
+	          </button>
+	          <button type="button"
+	                  class="btn btn-ghost btn-sm btn-square"
+	                  aria-label="关闭"
+	                  @click="storeCreateOpen=false; storePickerOpen=true">
+	            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+	          </button>
+	        </div>
+      </div>
+      <form class="contents" @submit.prevent="createStore($event)">
+        <div class="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
+          <label class="block space-y-1.5">
+            <span class="text-sm font-medium text-slate-800">Provider 类型</span>
+            {{ ui_single_select(
+              options="providers",
+              selected_label="activeProvider?.name",
+              option_key="option.namespace || option.type",
+              option_label="option.name",
+              selected="(option.namespace || option.type) === selectedType",
+              on_select="chooseStoreImplementation(option.namespace || option.type)",
+              placeholder="请选择 Provider 类型",
+              disabled="Boolean(editingStore)",
+              aria_label="选择 Provider 类型"
+            ) }}
+          </label>
+
+          <section class="space-y-3">
+            <div>
+              <div class="text-sm font-medium text-slate-900">配置参数</div>
+              <div class="mt-0.5 text-xs text-slate-500" x-text="activeProvider ? activeProvider.name : '请选择 Provider 类型'"></div>
+            </div>
+            {% include "partials/config_parameter_fields.html" %}
+            <div class="rounded-lg border border-dashed border-slate-200 px-4 py-4 text-sm text-slate-500"
+                 x-show="activeProvider && !(activeProvider.parameters || []).length">
+              这个 Provider 不需要额外参数
+            </div>
+          </section>
+
+          <label class="block space-y-1.5">
+            <span class="text-sm font-medium text-slate-800">实例名称</span>
+            <input class="input input-bordered w-full"
+                   name="name"
+                   placeholder="例如：Notion 主库"
+                   x-model="formName"
+                   required>
+          </label>
+		          <div class="whitespace-pre-line rounded-lg border px-3 py-2 text-sm"
+			     x-show="message || error"
+			     :class="storeFeedbackClass"
+			     x-text="error || message"></div>
+	          <div x-show="currentLogProviderId" class="overflow-hidden rounded-lg border border-slate-200">
+	            <div class="flex min-h-11 items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3">
+	              <div class="min-w-0">
+	                <div class="text-sm font-medium text-slate-800">初始化日志</div>
+	                <div class="truncate text-xs text-slate-400" x-text="logPath"></div>
+	              </div>
+	              <div class="flex shrink-0 items-center gap-1">
+	                <button type="button"
+	                        class="btn btn-ghost btn-xs"
+	                        :disabled="logLoading"
+	                        @click="loadLogs(false, true)">刷新</button>
+	                <button type="button"
+	                        class="btn btn-ghost btn-xs"
+	                        x-show="!logFollowing && logLines.length"
+	                        @click="scrollLogsToBottom()">最新</button>
+	              </div>
+	            </div>
+	            <div class="h-44 overflow-y-auto bg-slate-950 p-3 font-mono text-xs leading-5 text-slate-200"
+	                 x-ref="storeLogPanel"
+	                 @scroll.passive="handleLogScroll($event)">
+	              <div class="pb-2 text-center text-slate-500"
+	                   x-show="logLoading && logHasMore">正在加载更早日志</div>
+	              <template x-for="line in logLines" :key="line.index">
+	                <div class="whitespace-pre-wrap break-all" x-text="line.text || ' '"></div>
+	              </template>
+	              <div class="grid h-full place-items-center text-slate-500"
+	                   x-show="!logLoading && !logLines.length">暂无日志</div>
+	            </div>
+	          </div>
+	        </div>
+        <div class="flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-white px-5 py-4 sm:px-6">
+          <button type="button"
+                  class="btn btn-ghost"
+                  @click="storeCreateOpen=false; storePickerOpen=true">取消</button>
+          <button class="btn border-slate-900 bg-slate-900 text-white hover:border-slate-700 hover:bg-slate-700"
+                  type="submit"
+                  :disabled="saving"
+                  x-text="editingStore ? '更新' : '创建'"></button>
+        </div>
+      </form>
+    </div>
+    <div class="modal-backdrop" @click="storeCreateOpen=false; storePickerOpen=true"></div>
+  </div>
+</div>
+
+<script>
+function storeConnectorManager(initialSubjectType, projectId) {
+  const storeTypes = {
+    aweme: { value: 'store_aweme', label: '作品存储 Provider' },
+    account: { value: 'store_account', label: '账号存储 Provider' },
+    video_transcription: { value: 'store_video_transcription', label: '转写存储 Provider' }
+  };
+  return {
+    providers: [],
+    subjectType: initialSubjectType || 'aweme',
+    projectId: projectId || '',
+    importProviders: [],
+    stores: [],
+    selectedStoreIds: [],
+    storeProviderType: '',
+    storePickerMode: 'select',
+    addMenuOpen: false,
+    selectedType: '',
+    editingStore: null,
+    formName: '',
+    formValues: {},
+	    saving: false,
+	    settingUp: false,
+	    visiblePasswords: {},
+	    message: '',
+	    error: '',
+	    currentLogProviderId: '',
+	    logLines: [],
+	    logStart: 0,
+	    logTotal: 0,
+	    logHasMore: false,
+	    logLoading: false,
+	    logFollowing: true,
+	    logPath: '',
+	    init() {
+	      this.setSubject(this.subjectType);
+	      this.loadStoreCatalog();
+	      window.addEventListener('open-store-picker', (event) => {
+	        this.setSubject(event.detail?.subjectType || this.subjectType);
+	        this.storePickerMode = 'select';
+	        this.addMenuOpen = false;
+	        this.loadStoreCatalog();
+	      });
+	      window.addEventListener('store-status-updated', (event) => {
+	        const detail = event.detail || {};
+	        this.stores = this.stores.map((item) => (
+	          String(item.id) === String(detail.id)
+	            ? { ...item, status: detail.status || item.status, message: detail.message || item.message }
+	            : item
+	        ));
+	      });
+	    },
+	    setSubject(subjectType) {
+	      this.subjectType = subjectType || 'aweme';
+	      this.storeProviderType = storeTypes[this.subjectType]?.value || '';
+	      this.stores = [];
+	    },
+		    get storeLabel() {
+		      return storeTypes[this.subjectType]?.label || '存储 Provider';
+		    },
+		    get storeFeedbackClass() {
+		      if (this.error) return 'border-red-200 bg-red-50 text-red-700';
+		      if (this.saving || this.settingUp) return 'border-amber-200 bg-amber-50 text-amber-700';
+		      return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+		    },
+		    isStoreSelected(store) {
+	      return this.selectedStoreIds.includes(String(store.provider_id || store.id));
+	    },
+	    get activeProvider() {
+	      return this.providers.find(
+	        (provider) => (provider.namespace || provider.type) === this.selectedType
+	      ) || null;
+	    },
+	    chooseStoreImplementation(namespace) {
+	      this.selectedType = namespace;
+	      this.resetValues();
+	    },
+	    async loadStoreCatalog() {
+	      if (!this.projectId || !this.storeProviderType) return;
+	      this.error = '';
+	      try {
+	        const response = await fetch(`/api/v1/providers?type=${encodeURIComponent(this.storeProviderType)}&project_id=${encodeURIComponent(this.projectId)}`);
+	        const catalog = await response.json().catch(() => ({}));
+	        if (!response.ok) throw new Error(catalog.error?.message || catalog.detail || `HTTP ${response.status}`);
+	        this.stores = catalog.providers || [];
+	        this.providers = catalog.provider_classes || [];
+	        this.selectedStoreIds = Array.isArray(catalog.selected) ? catalog.selected.map(String) : [];
+	        if (!this.providers.some((provider) => (provider.namespace || provider.type) === this.selectedType)) {
+	          this.selectedType = this.providers[0]?.namespace || this.providers[0]?.type || '';
+	        }
+	      } catch (error) {
+	        this.error = `获取 Provider 失败：${error.message}`;
+	      }
+	    },
+	    async toggleStore(provider, selected) {
+	      this.saving = true;
+	      this.error = '';
+	      try {
+	        const response = await fetch('/api/v1/providers/selection', {
+	          method: 'PATCH',
+	          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+	          credentials: 'same-origin',
+	          body: JSON.stringify({
+	            project_id: this.projectId,
+	            type: this.storeProviderType,
+	            provider_id: String(provider.provider_id || provider.id),
+	            selected
+	          })
+	        });
+	        const result = await response.json().catch(() => ({}));
+	        if (!response.ok) throw new Error(result.error?.message || result.detail || `HTTP ${response.status}`);
+	        this.selectedStoreIds = (result.selected || []).map(String);
+	        this.notifyStoreProvidersUpdated();
+	      } catch (error) {
+	        this.error = `更新选择失败：${error.message}`;
+	        await this.loadStoreCatalog();
+	      } finally {
+	        this.saving = false;
+	      }
+	    },
+		    startCreate() {
+		      this.addMenuOpen = false;
+		      this.editingStore = null;
+		      this.resetLogs();
+		      this.resetCreateForm();
+		      this.storePickerOpen = false;
+		      this.storeCreateOpen = true;
+	    },
+	    async loadImportable() {
+	      this.addMenuOpen = false;
+	      this.storePickerMode = 'import';
+	      this.importProviders = [];
+	      this.error = '';
+	      if (!this.projectId) {
+	        this.error = '请先选择项目';
+	        return;
+	      }
+	      try {
+	        const response = await fetch(`/api/v1/providers?type=${encodeURIComponent(this.storeProviderType)}&project_id=${encodeURIComponent(this.projectId)}&importable=true`);
+	        const result = await response.json().catch(() => ({}));
+	        if (!response.ok) throw new Error(result.error?.message || result.detail || `HTTP ${response.status}`);
+	        this.importProviders = result.providers || [];
+	        if (!this.importProviders.length) this.message = '没有可从其他项目导入的 Provider';
+	      } catch (error) {
+	        this.error = `获取可导入 Provider 失败：${error.message}`;
+	      }
+	    },
+	    async importProvider(provider) {
+	      try {
+	        const response = await fetch(`/api/v1/projects/${encodeURIComponent(this.projectId)}/providers/${encodeURIComponent(provider.provider_id || provider.id)}?type=${encodeURIComponent(this.storeProviderType)}`, { method: 'POST' });
+	        const result = await response.json().catch(() => ({}));
+	        if (!response.ok) throw new Error(result.error?.message || result.detail || `HTTP ${response.status}`);
+	        this.storePickerMode = 'select';
+	        await this.loadStoreCatalog();
+	        this.notifyStoreProvidersUpdated();
+	      } catch (error) {
+	        this.error = `导入 Provider 失败：${error.message}`;
+	      }
+	    },
+		    startEdit(store) {
+		      this.message = '';
+		      this.error = '';
+		      this.editingStore = store;
+		      this.currentLogProviderId = String(store.provider_id || store.id || '');
+		      this.selectedType = store.type || this.providers[0]?.type || '';
+		      this.formName = store.name || '';
+		      this.resetValues();
+		      this.loadLogs(false, true);
+		      this.storePickerOpen = false;
+		      this.storeCreateOpen = true;
+		    },
+	    resetCreateForm() {
+		      this.message = '';
+		      this.error = '';
+		      this.editingStore = null;
+		      this.resetLogs();
+		      this.formName = '';
+		      this.selectedType = this.selectedType || this.providers[0]?.type || '';
+		      this.resetValues();
+	    },
+    resetValues() {
+      const values = {};
+      for (const parameter of this.activeProvider?.parameters || []) {
+        let value = this.editingStore?.setup_payload?.[parameter.key]
+          ?? parameter.default
+          ?? (parameter.type === 'multi_select' ? [] : (parameter.type === 'checkbox' ? false : ''));
+        if (parameter.type === 'password' && value === '***configured***') value = '';
+        if (parameter.type === 'checkbox') value = Boolean(value);
+        values[parameter.key] = value;
+      }
+      this.formValues = values;
+      this.visiblePasswords = {};
+    },
+    payload() {
+      const values = {};
+      for (const parameter of this.activeProvider?.parameters || []) {
+        let value = this.formValues[parameter.key];
+        if (parameter.type === 'number' && value !== '') value = Number(value);
+        if (parameter.type === 'password' && value === '') continue;
+        if (parameter.type === 'checkbox') value = Boolean(value);
+        values[parameter.key] = value;
+      }
+      return values;
+    },
+    stateText(status) {
+      return {
+        ready: '可用',
+        error: '需要检查',
+        unavailable: '需要检查',
+        disabled: '已停用'
+      }[status] || '未检查';
+    },
+    parameterConfigured(parameter) {
+      if (!this.editingStore) return false;
+      const setupPayload = this.editingStore.setup_payload || {};
+      return setupPayload[parameter.key] !== undefined && setupPayload[parameter.key] !== null && setupPayload[parameter.key] !== '';
+    },
+    isPasswordVisible(parameter) {
+      return Boolean(this.visiblePasswords[parameter.key]);
+    },
+    togglePassword(parameter) {
+      this.visiblePasswords[parameter.key] = !this.visiblePasswords[parameter.key];
+    },
+    passwordPlaceholder(parameter) {
+      return this.parameterConfigured(parameter) ? '' : '请输入配置值';
+    },
+		    notifyStoreProvidersUpdated() {
+		      window.dispatchEvent(new CustomEvent('store-providers-updated', {
+		        detail: { subjectType: this.subjectType }
+		      }));
+		    },
+	    openLogs(provider) {
+	      const providerId = provider?.provider_id || provider?.id;
+	      if (!providerId) return;
+	      this.openLogsById(providerId, `${provider.name || 'Store Provider'} 运行日志`);
+	    },
+	    openLogsById(providerId, title, scope = 'runtime') {
+	      window.dispatchEvent(new CustomEvent('open-log-modal', {
+	        detail: {
+	          title,
+	          url: `/api/v1/providers/instances/${encodeURIComponent(providerId)}/logs?scope=${encodeURIComponent(scope)}`
+	        }
+	      }));
+	    },
+	    resetLogs() {
+	      this.currentLogProviderId = '';
+	      this.logLines = [];
+	      this.logStart = 0;
+	      this.logTotal = 0;
+	      this.logHasMore = false;
+	      this.logLoading = false;
+	      this.logFollowing = true;
+	      this.logPath = '';
+	    },
+	    async loadLogs(older = false, scrollToBottom = false) {
+	      if (!this.currentLogProviderId || this.logLoading) return;
+	      this.logLoading = true;
+	      const panel = this.$refs.storeLogPanel;
+	      const previousHeight = panel?.scrollHeight || 0;
+	      try {
+	        const params = new URLSearchParams({ limit: '200', scope: 'setup' });
+	        if (older && this.logStart > 0) params.set('before', String(this.logStart));
+	        const response = await fetch(
+	          `/api/v1/providers/instances/${encodeURIComponent(this.currentLogProviderId)}/logs?${params}`,
+	          { headers: { Accept: 'application/json' }, credentials: 'same-origin' }
+	        );
+	        const data = await response.json().catch(() => ({}));
+	        if (!response.ok) throw new Error(data.error?.message || data.detail || `HTTP ${response.status}`);
+	        this.logPath = data.path || '';
+	        const incoming = data.lines || [];
+	        const lastKnown = this.logLines.at(-1)?.index ?? -1;
+	        if (data.total <= lastKnown) {
+	          this.logLines = incoming;
+	        } else {
+	          const merged = new Map(this.logLines.map((line) => [line.index, line]));
+	          for (const line of incoming) merged.set(line.index, line);
+	          this.logLines = Array.from(merged.values()).sort((left, right) => left.index - right.index);
+	        }
+	        this.logStart = this.logLines[0]?.index ?? 0;
+	        this.logTotal = data.total || 0;
+	        this.logHasMore = this.logStart > 0;
+	        await this.$nextTick();
+	        if (older && panel) {
+	          panel.scrollTop = panel.scrollHeight - previousHeight;
+	        } else if (scrollToBottom || this.logFollowing) {
+	          this.scrollLogsToBottom();
+	        }
+	      } catch (error) {
+	        this.error = `日志读取失败：${error.message}`;
+	      } finally {
+	        this.logLoading = false;
+	      }
+	    },
+	    handleLogScroll(event) {
+	      const panel = event.currentTarget;
+	      const distance = panel.scrollHeight - panel.scrollTop - panel.clientHeight;
+	      this.logFollowing = distance < 32;
+	      if (panel.scrollTop < 24 && this.logHasMore && !this.logLoading) {
+	        this.loadLogs(true, false);
+	      }
+	    },
+	    scrollLogsToBottom() {
+	      this.$nextTick(() => {
+	        const panel = this.$refs.storeLogPanel;
+	        if (panel) panel.scrollTop = panel.scrollHeight;
+	        this.logFollowing = true;
+	      });
+	    },
+		    async createStore(event) {
+	      if (this.saving) return;
+	      this.saving = true;
+	      this.message = this.editingStore ? '正在更新' : '正在保存';
+	      this.error = '';
+	      const form = event.target;
+	      const submitter = event.submitter;
+	      try {
+	        const name = new FormData(form).get('name');
+	        if (this.editingStore && name && name !== this.editingStore.name) {
+	          const renameResponse = await fetch(`/api/v1/providers/instances/${encodeURIComponent(this.editingStore.id)}`, {
+	            method: 'PATCH',
+	            headers: {
+	              'Content-Type': 'application/json',
+	              Accept: 'application/json'
+	            },
+	            credentials: 'same-origin',
+	            body: JSON.stringify({ name })
+	          });
+	          const renameResult = await renameResponse.json().catch(() => ({}));
+	          if (!renameResponse.ok) {
+	            throw new Error(renameResult.error?.message || renameResult.detail || `HTTP ${renameResponse.status}`);
+	          }
+	        }
+	        const response = await fetch(this.editingStore ? `/api/v1/providers/instances/${encodeURIComponent(this.editingStore.id)}/setup` : '/api/v1/providers', {
+	          method: 'POST',
+	          headers: {
+	            'Content-Type': 'application/json',
+	            Accept: 'application/json'
+	          },
+	          credentials: 'same-origin',
+	          body: JSON.stringify(this.editingStore ? {
+	            values: this.payload()
+	          } : {
+	            name,
+	            namespace: this.selectedType,
+	            project_id: this.projectId,
+	            provider_type: this.storeProviderType,
+	            values: this.payload()
+	          })
+	        });
+	        const result = await response.json().catch(() => ({}));
+	        if (!response.ok) {
+	          throw new Error(result.error?.message || result.detail || `HTTP ${response.status}`);
+	        }
+	        if (this.editingStore && result.success === false) {
+	          throw new Error(result.message || 'Store 初始化失败');
+	        }
+	        let setupStatus = null;
+	        if (this.editingStore) {
+	          const statusResponse = await fetch(`/api/v1/providers/instances/${encodeURIComponent(this.editingStore.id)}/status`, {
+	            headers: { Accept: 'application/json' },
+	            credentials: 'same-origin'
+	          });
+	          setupStatus = await statusResponse.json().catch(() => ({}));
+	          if (!statusResponse.ok) {
+	            throw new Error(setupStatus.error?.message || setupStatus.detail || `HTTP ${statusResponse.status}`);
+	          }
+	        }
+		        await this.loadStoreCatalog();
+		        this.notifyStoreProvidersUpdated();
+		        const setupResult = result.setup_result || result;
+		        const providerId = this.editingStore?.id || result.provider_id || result.id;
+		        if (providerId) {
+		          this.currentLogProviderId = String(providerId);
+		          await this.loadLogs(false, true);
+		        }
+		        const doneMessage = submitter?.value === 'true'
+		          ? (this.editingStore ? '测试并更新完成' : '测试并保存完成')
+		          : (this.editingStore ? '更新完成' : '保存完成');
+	        this.message = setupResult.details?.summary
+		          ? `${setupResult.message || doneMessage}\n${setupResult.details.summary}`
+		          : (setupResult.message || doneMessage);
+		        this.error = '';
+		        this.editingStore = this.stores.find((store) => String(store.id) === String(providerId)) || this.editingStore;
+		      } catch (error) {
+		        this.error = `${this.editingStore ? '更新' : '保存'}失败：${error.message}`;
+		        this.message = '';
+		        await this.loadStoreCatalog().catch(() => {});
+		        this.notifyStoreProvidersUpdated();
+	      } finally {
+	        this.saving = false;
+	      }
+    }
+  };
+}
+</script>

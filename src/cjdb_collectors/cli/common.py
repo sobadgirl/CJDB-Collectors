@@ -8,7 +8,7 @@ import typer
 
 
 def get_services():
-    from cjdb_collectors.config import load_settings
+    from cjdb_collectors.settings import load_settings
     from cjdb_collectors.db import migrate_database
     from cjdb_collectors.services import build_services
 

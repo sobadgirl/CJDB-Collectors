@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ section_title }} · 超级对标{% endblock %}
+{% block brand_project_switcher %}
+<div class="relative" x-data="{ projectSwitcherOpen: false }" @keydown.escape.window="projectSwitcherOpen=false">
+  <button type="button"
+          class="btn btn-sm max-w-40 border-slate-200 bg-white px-2 text-left shadow-none"
+          @click="projectSwitcherOpen = !projectSwitcherOpen">
+    <span class="size-2 shrink-0 rounded-full" style="background:{{ current_project.color if current_project else '#94a3b8' }}"></span>
+    <span class="min-w-0 flex-1 truncate text-xs">{{ current_project.name if current_project else "选择项目" }}</span>
+  </button>
+  <div class="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
+       x-cloak x-show="projectSwitcherOpen"
+       x-transition.opacity.duration.100ms
+       @click.outside="projectSwitcherOpen=false">
+    <div class="px-2 pb-2 pt-1 text-xs font-medium text-slate-400">切换项目</div>
+    <div class="max-h-72 space-y-1 overflow-auto">
+      {% for project in projects %}
+      <a class="flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm hover:bg-slate-100 {% if project.id|string in selected_project_ids %}bg-slate-100 text-slate-950{% else %}text-slate-600{% endif %}"
+         href="/accounts?project_id={{ project.id }}">
+        <span class="size-2.5 shrink-0 rounded-full" style="background:{{ project.color or '#94a3b8' }}"></span>
+        <span class="min-w-0 flex-1 truncate">{{ project.name }}</span>
+        <span class="text-xs text-slate-400">{{ project_provider_ids.get(project.id|string, [])|length }} Provider</span>
+      </a>
+      {% else %}
+      <button type="button" class="w-full rounded-lg px-2 py-3 text-left text-sm text-slate-400 hover:bg-slate-50"
+              @click="projectCreateOpen=true">还没有项目，立即创建</button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+{# V1.0 发布隐藏：账号采集完整页面保留在 dashboard.html 的 accounts 分支，当前只展示占位页。 #}
+<div class="min-h-screen p-4 sm:p-8">
+  <section class="mx-auto max-w-7xl">
+    <div class="mb-6">
+      <p class="mb-1 text-sm font-medium text-slate-400">数据管理</p>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ section_title }}</h1>
+      <p class="mt-2 text-sm text-slate-500">{{ section_subtitle }}</p>
+    </div>
+    <div class="grid min-h-[24rem] place-items-center rounded-box border border-slate-200 bg-white p-8 text-center">
+      <div>
+        <div class="mx-auto grid size-14 place-items-center rounded-xl bg-slate-100 text-slate-500">
+          <svg class="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-8 0v2"/><path d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M19 8v6M22 11h-6"/>
+          </svg>
+        </div>
+        <h2 class="mt-4 text-lg font-semibold text-slate-950">敬请期待</h2>
+        <p class="mt-2 max-w-md text-sm leading-6 text-slate-500">账号采集、账号历史作品和账号同步相关能力将在后续版本开放。</p>
+        <a class="btn mt-5 border-slate-900 bg-slate-900 text-white hover:border-slate-700 hover:bg-slate-700" href="/awemes">返回作品管理</a>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

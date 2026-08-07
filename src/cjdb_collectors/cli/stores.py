@@ -105,11 +105,11 @@ def setup(
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     return cli_result(
-        get_services().store_providers.setup(
+        get_services().stores.setup(
             store_id,
             parse_values(values, values_file=values_file),
         ),
-        view="store_status",
+        view="setup_result",
     )
 
 
@@ -171,11 +171,10 @@ def store_aweme(
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     services = get_services()
-    storer = services.store_providers.get_storer(store_id)
     return cli_result(
         services.stores.store_aweme(
             services.awemes.get(aweme_id),
-            storer,
+            store_id,
         ),
         view="store_result",
     )
@@ -189,11 +188,27 @@ def store_account(
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     services = get_services()
-    storer = services.store_providers.get_storer(store_id)
     return cli_result(
         services.stores.store_account(
             services.accounts.get(account_id),
-            storer,
+            store_id,
+        ),
+        view="store_result",
+    )
+
+
+@app.command("transcription")
+@output_command
+def store_transcription(
+    transcription_id: str,
+    store_id: str = typer.Option(..., "--to"),
+    output_format: OutputFormat = format_option(),
+) -> CLIResult:
+    services = get_services()
+    return cli_result(
+        services.stores.store_transcription(
+            services.transcriptions.get(transcription_id),
+            store_id,
         ),
         view="store_result",
     )
@@ -246,10 +261,15 @@ def unset_default(
 def list_syncs(
     aweme: str | None = typer.Option(None, "--aweme"),
     account: str | None = typer.Option(None, "--account"),
+    transcription: str | None = typer.Option(None, "--transcription"),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     return sync_list_result(
-        get_services().sync.list(aweme_id=aweme, account_id=account)
+        get_services().sync.list(
+            aweme_id=aweme,
+            account_id=account,
+            transcription_id=transcription,
+        )
     )
 
 

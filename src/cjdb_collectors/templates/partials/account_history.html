@@ -1,0 +1,77 @@
+{% set history_status = record.history_status.value if record.history_status.value is defined else record.history_status %}
+{% set history_status_display = record.history_status_display if record.history_status_display is defined else display_task_status(history_status) %}
+{% set history_busy = history_status in ["pending", "running", "retry_wait"] %}
+{% set account_history_awemes = account_history_awemes if account_history_awemes is defined else [] %}
+<section id="account-history-{{ record.id }}">
+  <div class="mb-2 flex items-center justify-between gap-3">
+    <h4 class="text-sm font-semibold text-slate-900">发布历史</h4>
+  </div>
+  <form method="post"
+        action="/actions/accounts/{{ record.id }}/published-history"
+        hx-post="/actions/accounts/{{ record.id }}/published-history"
+        hx-target="#account-history-{{ record.id }}"
+        hx-swap="outerHTML"
+        class="mb-3 grid gap-2 rounded-lg border border-slate-200 p-3 sm:grid-cols-[repeat(3,minmax(0,1fr))_auto_auto]">
+      <input type="hidden" name="next_url" value="/accounts">
+      <label class="text-xs text-slate-500">
+        最大数量
+        <input class="input input-bordered input-xs mt-1 w-full" type="number" min="1" name="max_count" placeholder="不限">
+      </label>
+      <label class="text-xs text-slate-500">
+        最大翻页
+        <input class="input input-bordered input-xs mt-1 w-full" type="number" min="1" name="max_pages" value="1">
+      </label>
+      <label class="text-xs text-slate-500">
+        最早日期
+        <input class="input input-bordered input-xs mt-1 w-full" type="date" name="earliest_date">
+      </label>
+      <button class="btn btn-xs mt-5 bg-slate-900 text-white hover:bg-slate-700"
+              name="mode"
+              value="latest"
+              {% if history_busy or not record.platform_account_id %}disabled{% endif %}>
+        {% if history_status == "pending" %}等待中{% elif history_status == "running" %}拉取中{% else %}拉取最新{% endif %}
+      </button>
+      <button class="btn btn-xs mt-5 btn-ghost"
+              name="mode"
+              value="backfill"
+              {% if history_busy or not record.platform_account_id or record.history_has_more is sameas false %}disabled{% endif %}>
+        {% if history_status == "pending" %}等待中{% elif history_status == "running" %}拉取中{% elif record.history_has_more is sameas false %}已到底{% else %}继续补历史{% endif %}
+      </button>
+  </form>
+  <dl class="mb-3 grid gap-2 rounded-lg border border-slate-200 p-3 text-xs sm:grid-cols-4">
+    <div class="flex justify-between gap-3"><dt class="text-slate-400">状态</dt><dd class="text-slate-700">{{ history_status_display or "-" }}</dd></div>
+    <div class="flex justify-between gap-3"><dt class="text-slate-400">已入库</dt><dd class="text-slate-700">{{ record.history_fetched_count or 0 }}</dd></div>
+    <div class="flex justify-between gap-3"><dt class="text-slate-400">还有下一页</dt><dd class="text-slate-700">{{ "是" if record.history_has_more else "否" }}</dd></div>
+    <div class="flex justify-between gap-3"><dt class="text-slate-400">最近拉取</dt><dd class="truncate text-slate-700">{{ record.history_last_fetched_at or "-" }}</dd></div>
+  </dl>
+  {% if record.history_error %}
+  <p class="mb-3 max-h-20 overflow-auto rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{{ record.history_error }}</p>
+  {% endif %}
+  {% if account_history_awemes %}
+  <div class="max-h-80 divide-y divide-slate-100 overflow-auto rounded-lg border border-slate-200">
+    {% for item in account_history_awemes %}
+    <div class="flex items-center gap-3 px-3 py-2">
+      {% if item.cover_url %}
+      <img src="{{ item.cover_url }}" alt="{{ item.title or '作品封面' }}" class="size-12 shrink-0 rounded-md object-cover">
+      {% else %}
+      <span class="grid size-12 shrink-0 place-items-center rounded-md bg-slate-100 text-slate-400">
+        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M4 6h16v12H4z"/><path d="m10 9 5 3-5 3V9Z"/>
+        </svg>
+      </span>
+      {% endif %}
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-sm font-medium text-slate-900">{{ item.title or item.platform_aweme_id or "未命名作品" }}</p>
+        <p class="truncate text-xs text-slate-500">{{ item.content_type_display if item.content_type_display is defined else display_content_type(item.content_type) }} · {{ item.published_at or "-" }}</p>
+      </div>
+      <div class="shrink-0 text-right text-xs text-slate-500">
+        <p>{{ item.like_count if item.like_count is not none else "-" }} 赞</p>
+        <p>{{ item.comment_count if item.comment_count is not none else "-" }} 评</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="rounded-lg bg-slate-50 px-3 py-3 text-sm text-slate-400">还没有拉取发布历史。</p>
+  {% endif %}
+</section>

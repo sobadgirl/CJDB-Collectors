@@ -3,14 +3,17 @@
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
 
+from pathlib import Path
+
 from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
 
 from cjdb_collectors.routes import app_router
 from cjdb_collectors.routes.errors import install_error_handlers
 
 
 def _default_services() -> Any:
-    from cjdb_collectors.config import load_settings
+    from cjdb_collectors.settings import load_settings
     from cjdb_collectors.db import migrate_database
     from cjdb_collectors.services import build_services
 
@@ -40,6 +43,11 @@ def create_app(*, services: Any | None = None) -> FastAPI:
     if services is not None:
         app.state.services = services
     install_error_handlers(app)
+    app.mount(
+        "/static",
+        StaticFiles(directory=Path(__file__).resolve().parent / "static"),
+        name="static",
+    )
 
     @app.get("/health/live", tags=["health"], include_in_schema=False)
     def live_alias() -> dict[str, str]:

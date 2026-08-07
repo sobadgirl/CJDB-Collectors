@@ -74,7 +74,7 @@ def test_all_public_leaf_commands_support_format_option() -> None:
     assert missing == []
 
 
-def test_runtime_groups_support_format_when_invoked_directly() -> None:
+def test_runtime_commands_support_format_when_invoked_directly() -> None:
     root = get_command(cli.app)
 
     for name in ("webui", "worker"):

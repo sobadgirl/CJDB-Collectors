@@ -29,10 +29,10 @@ uv --version
 在项目目录初始化：
 
 ```bash
-cp config.yaml.example config.yaml
 uv python install 3.12
 uv python pin 3.12
 uv sync --no-dev
+./cjdb settings init
 ```
 
 `uv sync` 会自动创建项目根目录下的 `.venv`，无需手动激活。
@@ -178,9 +178,28 @@ uv sync --no-dev --extra transcription
   model=turbo
 ```
 
+如果 Hugging Face 访问不稳定，可以给 Faster Whisper 指定兼容 endpoint：
+
+```bash
+./cjdb provider setup video_transcription \
+  model=turbo \
+  hf_endpoint=https://YOUR_HF_ENDPOINT
+```
+
+使用 FunASR：
+
+```bash
+./cjdb provider select video_transcription funasr
+./cjdb provider setup video_transcription \
+  model=sensevoice-small \
+  hub=ms \
+  device=auto \
+  language=auto
+```
+
 `model_dir` 可以留空；留空时使用 faster-whisper、ModelScope 或 Hugging Face 的官方默认缓存。
 
-## Store 与分组
+## Store 与项目
 
 Store Provider 定义配置、状态检查、作品写入和账号写入方法。Store 是一个已配置的
 具体实例。
@@ -203,32 +222,33 @@ Store Provider 定义配置、状态检查、作品写入和账号写入方法�
 ./cjdb store default unset STORE_ID
 ```
 
-分组 Store 只接收该分组中的作品和账号：
+项目 Store 只接收该项目中的作品和账号：
 
 ```bash
-./cjdb group add "竞品账号"
-./cjdb group store add GROUP_ID STORE_ID
-./cjdb group store list GROUP_ID
-./cjdb group store remove GROUP_ID STORE_ID
+./cjdb project add "竞品账号"
+./cjdb project store add PROJECT_ID STORE_ID
+./cjdb project store list PROJECT_ID
+./cjdb project store remove PROJECT_ID STORE_ID
 ```
 
-绑定发生变化时，系统会对账同步关系。历史同步记录会保留，但不再匹配默认或分组
+绑定发生变化时，系统会对账同步关系。历史同步记录会保留，但不再匹配默认或项目
 范围的关系会被禁用，不会继续被 Worker 调度。
 
 ## 代码结构
 
 ```text
 src/cjdb_collectors/
-├── data_provider/
-│   ├── base.py
-│   ├── types.py
-│   ├── registry.py
-│   └── providers/
-├── store/
-│   ├── base.py
-│   ├── types.py
-│   ├── registry.py
-│   └── providers/
+├── domains/
+│   ├── data_provider/
+│   │   ├── base.py
+│   │   ├── types.py
+│   │   └── providers/
+│   ├── store/
+│   │   ├── base.py
+│   │   ├── types.py
+│   │   ├── registry.py
+│   │   └── providers/
+│   └── media/
 ├── services/
 ├── api/
 ├── routes/
@@ -243,8 +263,8 @@ src/cjdb_collectors/
 CLI / API / WebUI / Worker
             ↓
          Services
-       ↙          ↘
-Data Provider    Store Provider
+       ↙     ↓     ↘
+Data Provider  Media  Store Provider
 ```
 
 核心调用：
@@ -253,12 +273,11 @@ Data Provider    Store Provider
 aweme = services.awemes.get(aweme_id)
 services.awemes.fetch_data(aweme)
 
-storer = services.store_providers.get_storer(store_id)
-services.stores.store_aweme(aweme, storer)
+services.stores.store_aweme(aweme, store_id)
 ```
 
-具体 Provider 必须零参数初始化。setup 参数是它与外部配置交互的入口；新增实现时，
-继承对应的抽象 Mixin，并注册到 Registry。
+具体 Provider 必须支持通过 `config` 初始化。新增实现时，继承对应的抽象 Mixin，
+实现无参数的 `setup()`，并注册到 Registry。
 
 ## 验证
 

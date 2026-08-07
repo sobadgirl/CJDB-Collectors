@@ -5,7 +5,7 @@ import pytest
 import yaml
 from fastapi.testclient import TestClient
 
-from cjdb_collectors.config import (
+from cjdb_collectors.settings import (
     AppSettings,
     CollectorServiceSettings,
     ServicesSettings,
@@ -26,7 +26,7 @@ def api_client(tmp_path: Path) -> Iterator[TestClient]:
     """
 
     config_path = tmp_path / "config.yaml"
-    settings = Settings(
+    config = Settings(
         app=AppSettings(
             data_dir=tmp_path / "data",
             database_path=tmp_path / "e2e.sqlite",
@@ -43,15 +43,15 @@ def api_client(tmp_path: Path) -> Iterator[TestClient]:
     )
     config_path.write_text(
         yaml.safe_dump(
-            settings.model_dump(mode="json", exclude={"config_path"}),
+            config.model_dump(mode="json", exclude={"config_path"}),
             allow_unicode=True,
             sort_keys=False,
         ),
         encoding="utf-8",
     )
-    migrate_database(settings)
-    engine = create_db_engine(settings.app.database_path)
-    services = build_services(settings=settings, db_engine=engine)
+    migrate_database(config)
+    engine = create_db_engine(config.app.database_path)
+    services = build_services(settings=config, db_engine=engine)
     with TestClient(create_app(services=services)) as client:
         yield client
     engine.dispose()

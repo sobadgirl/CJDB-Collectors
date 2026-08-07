@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import text
 
-from cjdb_collectors.data_provider import DataProviderType
+from cjdb_collectors.domains.data_provider import DataProviderType
 
 from .base import SessionFactory
 from .data_providers import DataProviderService

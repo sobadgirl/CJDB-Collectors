@@ -1,0 +1,150 @@
+<td>
+  {% set is_video_media = record.video_url %}
+  {% set status_name = "video" if is_video_media else "images" %}
+  <div class="relative inline-flex min-h-12 items-center"
+       x-data='{
+         open: false,
+         x: 0,
+         y: 0,
+         timer: null,
+         refreshDisabled: false,
+         interacting: false,
+         setRefreshDisabled(active) {
+           if (active && !this.refreshDisabled) {
+             window.disableRefresh?.();
+             this.refreshDisabled = true;
+           } else if (!active && this.refreshDisabled) {
+             window.enableRefresh?.();
+             this.refreshDisabled = false;
+           }
+         },
+         show(el) {
+           clearTimeout(this.timer);
+           const rect = el.getBoundingClientRect();
+           this.x = Math.max(12, Math.min(rect.left + 32, window.innerWidth - 320 - 12));
+           this.y = rect.bottom + 4;
+           this.open = true;
+           this.setRefreshDisabled(true);
+         },
+         scheduleClose() {
+           this.timer = setTimeout(() => {
+             if (this.interacting) return;
+             this.open = false;
+             this.setRefreshDisabled(false);
+           }, 300);
+         },
+         keepOpen() {
+           clearTimeout(this.timer);
+           this.setRefreshDisabled(true);
+         },
+         beginInteraction() {
+           this.interacting = true;
+           this.keepOpen();
+         },
+         endInteraction() {
+           this.interacting = false;
+           this.keepOpen();
+         }
+       }'
+       @mouseenter="show($el)" @mouseleave="scheduleClose()">
+    {% if is_video_media %}
+    <div class="inline-flex items-center gap-1.5 rounded-md px-0.5 py-1 hover:bg-slate-100">
+      <span class="size-2.5 shrink-0 rounded-full {{ media_dot }}"></span>
+      <button type="button" class="relative grid size-10 place-items-center overflow-hidden rounded-md bg-slate-950 text-white shadow-sm hover:ring-2 hover:ring-slate-300" @click.stop="openDetail()">
+        {% if record.cover_url %}
+        <img src="{{ media_display_src(record.cover_url, record.cover_path) }}" alt="作品视频封面" class="h-full w-full object-cover opacity-80">
+        {% endif %}
+        <svg class="absolute size-4 drop-shadow" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    </div>
+    {% elif image_sources %}
+    <div class="inline-flex items-center gap-1.5 rounded-md px-0.5 py-1 hover:bg-slate-100">
+      <span class="size-2.5 shrink-0 rounded-full {{ media_dot }}"></span>
+      <button type="button" class="flex items-center" @click.stop="openDetail()">
+        {% for image in image_sources[:3] %}
+        <img src="{{ image }}" alt="作品图片 {{ loop.index }}" class="size-9 rounded-md border border-white bg-slate-100 object-cover shadow-sm {% if not loop.first %}-ml-7{% endif %}">
+        {% endfor %}
+        {% if image_sources|length > 3 %}
+        <span class="-ml-7 grid size-9 place-items-center rounded-md border border-white bg-slate-100 text-[10px] font-semibold text-slate-500 shadow-sm">+{{ image_sources|length - 3 }} 张</span>
+        {% endif %}
+      </button>
+    </div>
+    {% else %}
+    <span class="inline-flex size-10 items-center justify-center rounded-md border border-dashed border-slate-200 text-slate-300">
+      <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="m10 9 5 3-5 3V9Z"/></svg>
+    </span>
+    {% endif %}
+
+    <template x-teleport="body">
+    <div class="fixed z-50 w-80 rounded-lg border border-slate-200 bg-white p-3 text-left shadow-xl"
+         x-cloak x-show="open"
+         :style="`left:${x}px; top:${y}px`"
+         @mouseenter="keepOpen()"
+         @mouseleave="scheduleClose()"
+         @pointerdown.stop="beginInteraction()"
+         @pointerup.window="endInteraction()"
+         @click.stop>
+      <div class="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <p class="text-sm font-semibold text-slate-900">{{ "视频本地状态" if is_video_media else "图片本地状态" }}</p>
+          <p class="mt-1 text-xs text-slate-500">{{ media_title }}</p>
+        </div>
+        <span class="mt-1 size-2.5 shrink-0 rounded-full {{ media_dot }}"></span>
+      </div>
+      {% if worker_health and worker_health.status != "running" and media_status in ["pending", "retry_wait", "running"] %}
+      <p class="mb-3 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-700">Worker 未运行，下载任务不会继续执行。请先启动 Worker。</p>
+      {% endif %}
+      <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
+        <dt>下载状态</dt><dd class="truncate text-right text-slate-700">{{ media_status_display or "-" }}</dd>
+        <dt>尝试次数</dt><dd class="truncate text-right text-slate-700">{{ record.media_download_attempt_count or 0 }}</dd>
+        {% if is_video_media %}
+        <dt>远程视频</dt><dd class="truncate text-right text-slate-700">有</dd>
+        <dt>本地视频</dt><dd class="truncate text-right text-slate-700">{{ "已下载" if record.video_path else "未下载" }}</dd>
+        {% else %}
+        <dt>远程图片</dt><dd class="truncate text-right text-slate-700">{{ image_sources|length }} 张</dd>
+        <dt>本地图片</dt><dd class="truncate text-right text-slate-700">{{ photo_local_files|length }} 张</dd>
+        {% endif %}
+        <dt>开始时间</dt><dd class="truncate text-right text-slate-700">{{ record.media_download_started_at or "-" }}</dd>
+        <dt>完成时间</dt><dd class="truncate text-right text-slate-700">{{ record.media_download_finished_at or "-" }}</dd>
+        <dt>心跳时间</dt><dd class="truncate text-right text-slate-700">{{ record.media_download_heartbeat_at or "-" }}</dd>
+      </dl>
+      {% if is_video_media and record.video_path %}
+      <div class="mt-3 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
+        <span class="min-w-0 flex-1 truncate font-mono text-[11px] text-slate-600" title="{{ record.video_path }}">{{ record.video_path }}</span>
+        <button type="button" class="btn btn-ghost btn-xs btn-square" title="复制路径" aria-label="复制路径" @click.stop.prevent="window.copyPath($el, {{ record.video_path|tojson }})">
+          <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+      {% elif photo_local_files %}
+      <div class="mt-3 space-y-2">
+        {% for path in photo_local_files[:3] %}
+        <div class="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
+          <span class="min-w-0 flex-1 truncate font-mono text-[11px] text-slate-600" title="{{ path }}">{{ path }}</span>
+          <button type="button" class="btn btn-ghost btn-xs btn-square" title="复制路径" aria-label="复制路径" @click.stop.prevent="window.copyPath($el, {{ path|tojson }})">
+            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if record.media_download_error %}
+      <p class="mt-2 max-h-16 overflow-auto rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-700">{{ record.media_download_error }}</p>
+      {% endif %}
+      <div class="mt-3 grid grid-cols-2 gap-2">
+        <form method="post" action="/actions/awemes/{{ record.id }}/media/download" data-async-list-action hx-post="/actions/awemes/{{ record.id }}/media/download" hx-target="#data-list" hx-swap="innerHTML">
+          <input type="hidden" name="next_url" value="{{ current_list_url }}">
+          <button class="btn btn-sm w-full bg-slate-900 text-white hover:bg-slate-700"
+                  {% if (not record.cover_url and not record.video_url and not image_sources) or media_status in ["pending", "retry_wait", "running"] %}disabled{% endif %}>
+            {% if media_status == "running" %}下载中{% elif media_status == "pending" %}等待下载{% elif media_status == "retry_wait" %}等待重试{% elif media_status in ["failed", "timeout", "cancelled"] %}重试下载{% elif media_status == "succeeded" %}重新下载{% else %}下载到本地{% endif %}
+          </button>
+        </form>
+        <form method="post" action="/actions/awemes/{{ record.id }}/media/cancel" data-async-list-action hx-post="/actions/awemes/{{ record.id }}/media/cancel" hx-target="#data-list" hx-swap="innerHTML">
+          <input type="hidden" name="next_url" value="{{ current_list_url }}">
+          <button class="btn btn-sm btn-ghost w-full text-slate-600"
+                  {% if media_status in ["succeeded", "failed", "timeout", "cancelled", "not_requested"] %}disabled{% endif %}>取消</button>
+        </form>
+      </div>
+    </div>
+    </template>
+  </div>
+</td>

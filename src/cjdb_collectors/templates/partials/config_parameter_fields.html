@@ -1,0 +1,113 @@
+<div class="grid gap-4 sm:grid-cols-2" x-show="activeProvider">
+  <template x-for="parameter in activeProvider?.parameters || []" :key="parameter.key">
+    <label class="block min-w-0 space-y-1.5">
+      <span class="block text-sm font-medium text-slate-800">
+        <span x-text="parameter.label || parameter.key"></span>
+        <span class="text-red-500" x-show="parameter.required">*</span>
+      </span>
+
+      <template x-if="parameter.type === 'password'">
+        <div class="join flex w-full">
+          <input class="input input-bordered join-item min-w-0 flex-1"
+                 :type="isPasswordVisible(parameter) ? 'text' : 'password'"
+                 :name="parameter.key"
+                 :placeholder="passwordPlaceholder(parameter)"
+                 :required="parameter.required && !parameterConfigured(parameter)"
+                 :disabled="saving || settingUp"
+                 autocomplete="off"
+                 x-model="formValues[parameter.key]">
+          <button class="btn join-item btn-square" type="button"
+                  :aria-label="isPasswordVisible(parameter) ? '隐藏密码' : '显示密码'"
+                  :disabled="saving || settingUp"
+                  @click="togglePassword(parameter)">
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+            </svg>
+          </button>
+        </div>
+      </template>
+
+      <template x-if="parameter.type === 'single_select'">
+        <select class="select select-bordered w-full"
+                :name="parameter.key"
+                :required="parameter.required"
+                :disabled="saving || settingUp"
+                x-model="formValues[parameter.key]">
+          <template x-for="option in parameter.options || []" :key="option.value">
+            <option :value="option.value"
+                    :selected="formValues[parameter.key] === option.value"
+                    x-text="option.label || option.value"></option>
+          </template>
+        </select>
+      </template>
+
+      <template x-if="parameter.type === 'multi_select'">
+        <select class="select select-bordered min-h-24 w-full"
+                multiple
+                :name="parameter.key"
+                :required="parameter.required"
+                :disabled="saving || settingUp"
+                x-model="formValues[parameter.key]">
+          <template x-for="option in parameter.options || []" :key="option.value">
+            <option :value="option.value" x-text="option.label || option.value"></option>
+          </template>
+        </select>
+      </template>
+
+      <template x-if="parameter.type === 'checkbox'">
+        <div class="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
+          <input class="checkbox checkbox-sm"
+                 type="checkbox"
+                 :name="parameter.key"
+                 :disabled="saving || settingUp"
+                 x-model="formValues[parameter.key]">
+          <span class="text-sm text-slate-700">启用</span>
+        </div>
+      </template>
+
+      <template x-if="parameter.type === 'text'">
+        <input class="input input-bordered w-full"
+               :name="parameter.key"
+               :required="parameter.required"
+               :disabled="saving || settingUp"
+               type="text"
+               x-model="formValues[parameter.key]">
+      </template>
+
+      <template x-if="parameter.type === 'number'">
+        <input class="input input-bordered w-full"
+               :name="parameter.key"
+               :required="parameter.required"
+               :disabled="saving || settingUp"
+               type="number"
+               step="any"
+               x-model="formValues[parameter.key]">
+      </template>
+
+      <template x-if="parameter.type === 'local_path'">
+        <div class="join flex w-full">
+          <input class="input input-bordered join-item min-w-0 flex-1"
+                 :name="parameter.key"
+                 :required="parameter.required"
+                 :disabled="saving || settingUp"
+                 type="text"
+                 x-model="formValues[parameter.key]">
+          <button class="btn join-item btn-square"
+                  type="button"
+                  aria-label="使用默认路径"
+                  :disabled="saving || settingUp"
+                  @click="formValues[parameter.key] = parameter.default || ''">
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
+            </svg>
+          </button>
+        </div>
+      </template>
+
+      <span class="block text-xs leading-5 text-slate-500"
+            x-show="parameter.help"
+            x-text="parameter.help"></span>
+    </label>
+  </template>
+</div>

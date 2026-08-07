@@ -1,186 +1,464 @@
+<div {% if poll_interval %}hx-get="{{ poll_url }}" hx-trigger="every {{ poll_interval }}" hx-target="#data-list" hx-swap="innerHTML" hx-on::before-request="if (window.isRefreshDisabled && window.isRefreshDisabled()) event.preventDefault()"{% endif %}>
 {% if records %}
 <div class="h-[calc(100vh-12rem)] min-h-[24rem] overflow-x-auto overflow-y-visible rounded-box border border-base-300 bg-base-100">
-<div class="flex h-full min-w-[76rem] flex-col overflow-visible">
-  <div class="shrink-0 border-b border-base-300 bg-base-100">
-  <table class="table table-fixed">
-    <colgroup>
-      <col class="w-[28%]">
-      <col class="w-[9%]">
-      <col class="w-[9%]">
-      <col class="w-[8%]">
-      <col class="w-[8%]">
-      <col class="w-[8%]">
-      <col class="w-[8%]">
-      <col class="w-[8%]">
-      <col class="w-[8%]">
-      <col class="w-[6%]">
-    </colgroup>
-    <thead><tr><th>作品</th><th>平台</th><th>类型</th><th>播放量</th><th>点赞量</th><th>收藏量</th><th>转发量</th><th>评论量</th><th>同步数据</th><th class="text-right">操作</th></tr></thead>
-  </table>
-  </div>
+<div class="flex h-full min-w-[96rem] flex-col overflow-hidden">
   <div class="min-h-0 flex-1 overflow-auto">
   <table class="table table-fixed">
     <colgroup>
+      {% if tab == 'awemes' %}
+      <col class="w-[22%]">
+      <col class="w-[9%]">
+      <col class="w-[11%]">
+      <col class="w-[7%]">
+      <col class="w-[6%]">
+      <col class="w-[6%]">
+      <col class="w-[6%]">
+      <col class="w-[6%]">
+      <col class="w-[6%]">
+      <col class="w-[8%]">
+      {% else %}
       <col class="w-[28%]">
-      <col class="w-[9%]">
-      <col class="w-[9%]">
-      <col class="w-[8%]">
-      <col class="w-[8%]">
-      <col class="w-[8%]">
-      <col class="w-[8%]">
-      <col class="w-[8%]">
+      <col class="w-[5%]">
+      <col class="w-[14%]">
+      <col class="w-[7%]">
+      <col class="w-[7%]">
+      <col class="w-[7%]">
+      <col class="w-[7%]">
+      <col class="w-[10%]">
+      {% endif %}
       <col class="w-[8%]">
       <col class="w-[6%]">
     </colgroup>
+    {% if tab == 'awemes' %}
+    <thead class="bg-base-100 shadow-sm"><tr><th class="sticky top-0 z-20 bg-base-100">作品</th><th class="sticky top-0 z-20 bg-base-100">媒体文件</th><th class="sticky top-0 z-20 bg-base-100">作者</th><th class="sticky top-0 z-20 bg-base-100">类型</th><th class="sticky top-0 z-20 bg-base-100">播放量</th><th class="sticky top-0 z-20 bg-base-100">点赞量</th><th class="sticky top-0 z-20 bg-base-100">收藏量</th><th class="sticky top-0 z-20 bg-base-100">转发量</th><th class="sticky top-0 z-20 bg-base-100">评论量</th><th class="sticky top-0 z-20 bg-base-100">视频转写</th><th class="sticky top-0 z-20 bg-base-100">同步数据</th><th class="sticky top-0 z-20 bg-base-100 text-right">操作</th></tr></thead>
+    {% else %}
+    <thead class="bg-base-100 shadow-sm"><tr><th class="sticky top-0 z-20 bg-base-100">账号</th><th class="sticky top-0 z-20 bg-base-100">平台</th><th class="sticky top-0 z-20 bg-base-100">账号 ID</th><th class="sticky top-0 z-20 bg-base-100">粉丝</th><th class="sticky top-0 z-20 bg-base-100">点赞</th><th class="sticky top-0 z-20 bg-base-100">评论</th><th class="sticky top-0 z-20 bg-base-100">作品量</th><th class="sticky top-0 z-20 bg-base-100">采集状态</th><th class="sticky top-0 z-20 bg-base-100">同步数据</th><th class="sticky top-0 z-20 bg-base-100 text-right">操作</th></tr></thead>
+    {% endif %}
     <tbody>
     {% for record in records %}
-      {% set content_type = record.content_type.value if record.content_type.value is defined else record.content_type %}
+      {% set content_type = (record.content_type.value if record.content_type.value is defined else record.content_type) if tab == 'awemes' else none %}
       {% set collection_status = record.collection_status.value if record.collection_status.value is defined else record.collection_status %}
+      {% set collection_status_display = record.collection_status_display if record.collection_status_display is defined else collection_status %}
       {% set collection_dot = "bg-emerald-500" if collection_status == "succeeded" else "bg-red-500" if collection_status in ["failed", "timeout", "cancelled"] else "bg-amber-400 animate-pulse" if collection_status == "running" else "bg-slate-300" %}
       {% set collection_title = "数据采集完成" if collection_status == "succeeded" else "数据采集失败" if collection_status in ["failed", "timeout", "cancelled"] else "数据正在采集" if collection_status == "running" else "等待调度采集" if collection_status in ["pending", "retry_wait"] else "尚未采集数据" %}
-      {% set comment_status = record.comment_collection_status.value if record.comment_collection_status.value is defined else record.comment_collection_status %}
+      {% set comment_status = (record.comment_collection_status.value if record.comment_collection_status.value is defined else record.comment_collection_status) if tab == 'awemes' else none %}
+      {% set comment_status_display = record.comment_collection_status_display if record.comment_collection_status_display is defined else comment_status %}
       {% set comment_dot = "bg-emerald-500" if comment_status == "succeeded" else "bg-red-500" if comment_status in ["failed", "timeout", "cancelled"] else "bg-amber-400 animate-pulse" if comment_status == "running" else "bg-slate-300" %}
       {% set comment_title = "评论采集完成" if comment_status == "succeeded" else "评论采集失败" if comment_status in ["failed", "timeout", "cancelled"] else "评论正在采集" if comment_status == "running" else "等待调度采集评论" if comment_status in ["pending", "retry_wait"] else "不采集评论" %}
-      <tr x-data="{
-            groupOpen: false,
+      {% set photo_media = merge_photo_media(record.photos, record.photo_paths) if tab == 'awemes' else [] %}
+      {% set photo_local_files = photo_local_paths(record.photo_paths) if tab == 'awemes' else [] %}
+      {% set photo_sources = photo_media|map(attribute='src')|list %}
+      {% set cover_source = media_display_src(record.cover_url, record.cover_path) if tab == 'awemes' else none %}
+      {% set preview_images = (photo_sources + ([cover_source] if cover_source and not photo_sources else [])) if tab == 'awemes' else [] %}
+      {% set image_sources = (photo_sources + ([cover_source] if cover_source and not photo_sources else [])) if tab == 'awemes' else [] %}
+      {% set media_status = (record.media_download_status.value if record.media_download_status.value is defined else record.media_download_status) if tab == 'awemes' else none %}
+      {% set media_status_display = record.media_download_status_display if record.media_download_status_display is defined else media_status %}
+      {% set media_dot = "bg-emerald-500" if media_status == "succeeded" else "bg-red-500" if media_status in ["failed", "timeout", "cancelled"] else "bg-amber-400 animate-pulse" if media_status in ["pending", "retry_wait", "running"] else "bg-slate-300" %}
+      {% set media_title = "本地媒体已下载" if media_status == "succeeded" else "媒体下载失败" if media_status in ["failed", "timeout"] else "媒体下载已取消" if media_status == "cancelled" else "正在下载媒体" if media_status == "running" else "等待 Worker 下载" if media_status == "pending" else "等待重试下载" if media_status == "retry_wait" else "还没有下载到本地" %}
+      {% set current_transcription = record_transcriptions.get(record.id|string) if tab == 'awemes' else none %}
+      {% set transcription_status = (current_transcription.status.value if current_transcription and current_transcription.status.value is defined else current_transcription.status if current_transcription else "not_requested") if tab == 'awemes' else none %}
+      {% set transcription_status_display = current_transcription.status_display if current_transcription else display_task_status("not_requested") %}
+      {% set transcription_dot = "bg-emerald-500" if transcription_status == "succeeded" else "bg-red-500" if transcription_status in ["failed", "timeout", "cancelled"] else "bg-amber-400 animate-pulse" if transcription_status in ["pending", "retry_wait", "running"] else "bg-slate-300" %}
+      {% set transcription_title = "视频转写完成" if transcription_status == "succeeded" else "视频转写失败" if transcription_status in ["failed", "timeout"] else "视频转写已取消" if transcription_status == "cancelled" else "正在转写视频" if transcription_status == "running" else "等待转写调度" if transcription_status == "pending" else "等待重试转写" if transcription_status == "retry_wait" else "尚未发起转写" %}
+      {% set supports_transcription = content_type == "video" or record.video_url %}
+      {% set author = record_authors.get(record.id|string) if tab == 'awemes' else none %}
+      <tr x-data='{
+            projectOpen: false,
             actionOpen: false,
             deleteOpen: false,
+            detailUrl: {{ ("/partials/" ~ tab ~ "/" ~ record.id ~ "/detail")|tojson }},
             actionX: 0,
             actionY: 0,
+            refreshDisabledByRow: false,
+            previewMedia: {{ preview_images|tojson }},
+            previewMediaIndex: 0,
+            previewPlaying: false,
+            previewVideoUrl: {{ ((media_display_src(record.video_url, record.video_path) or "") if tab == 'awemes' else "")|tojson }},
             previewOpen: false,
             previewX: 0,
             previewY: 0,
             previewTimer: null,
+            previewInteracting: false,
+            accountPreviewOpen: false,
+            accountPreviewX: 0,
+            accountPreviewY: 0,
+            accountPreviewTimer: null,
+            authorPreviewOpen: false,
+            authorPreviewX: 0,
+            authorPreviewY: 0,
+            authorPreviewTimer: null,
             statusOpen: null,
             statusX: 0,
             statusY: 0,
             statusTimer: null,
+            syncOpen: false,
+            syncX: 0,
+            syncY: 0,
+            syncTimer: null,
+            get previewCurrentMedia() {
+              return this.previewMedia.length ? this.previewMedia[this.previewMediaIndex] : "";
+            },
+            previewNextMedia() {
+              if (this.previewMedia.length > 1) this.previewMediaIndex = (this.previewMediaIndex + 1) % this.previewMedia.length;
+            },
+            previewPreviousMedia() {
+              if (this.previewMedia.length > 1) this.previewMediaIndex = (this.previewMediaIndex + this.previewMedia.length - 1) % this.previewMedia.length;
+            },
+            previewPlayVideo() {
+              if (this.previewVideoUrl) this.previewPlaying = true;
+            },
+            setRefreshDisabled(active) {
+              if (active && !this.refreshDisabledByRow) {
+                window.disableRefresh?.();
+                this.refreshDisabledByRow = true;
+              } else if (!active && this.refreshDisabledByRow) {
+                window.enableRefresh?.();
+                this.refreshDisabledByRow = false;
+              }
+            },
+            restoreRefreshIfIdle() {
+              if (!this.previewOpen && !this.accountPreviewOpen && !this.authorPreviewOpen && !this.statusOpen && !this.syncOpen && !this.actionOpen && !this.deleteOpen && !this.projectOpen) {
+                this.setRefreshDisabled(false);
+              }
+            },
+            placeHover(el, width = 320, height = null, gap = 4, offsetX = 32) {
+              const rect = el.getBoundingClientRect();
+              const x = Math.max(12, Math.min(rect.left + offsetX, window.innerWidth - width - 12));
+              const below = rect.bottom + gap;
+              const above = rect.top - (height || 0) - gap;
+              const y = height && below + height > window.innerHeight - 12 ? Math.max(12, above) : below;
+              return { x, y };
+            },
+            openDetail() {
+              this.openModal(this.detailUrl);
+            },
+            openModal(url) {
+              const root = document.querySelector("#detail-modal-root");
+              if (!root || !url) return;
+              if (root.innerHTML.trim()) {
+                root.innerHTML = "";
+                window.enableRefresh?.();
+              }
+              root.innerHTML = `<div class="modal modal-open"><div class="modal-box w-[min(32rem,calc(100vw-2rem))] max-w-none"><div class="flex items-center gap-3 text-sm text-slate-500"><span class="loading loading-spinner loading-sm"></span><span>正在加载详情...</span></div></div></div>`;
+              window.htmx?.ajax("GET", url, { target: "#detail-modal-root", swap: "innerHTML" });
+            },
             showPreview(el) {
               clearTimeout(this.previewTimer);
-              const rect = el.getBoundingClientRect();
-              this.previewX = Math.min(Math.max(12, rect.left), window.innerWidth - 464);
-              this.previewY = Math.max(12, Math.min(rect.bottom + 10, window.innerHeight - 520));
+              this.previewPlaying = false;
+              const pos = this.placeHover(el, 448, 520, 4, 72);
+              this.previewX = pos.x;
+              this.previewY = pos.y;
               this.previewOpen = true;
+              this.setRefreshDisabled(true);
             },
             schedulePreviewClose() {
-              this.previewTimer = setTimeout(() => { this.previewOpen = false }, 220);
+              this.previewTimer = setTimeout(() => {
+                if (this.previewInteracting) return;
+                this.previewOpen = false;
+                this.restoreRefreshIfIdle();
+              }, 300);
             },
             keepPreviewOpen() {
               clearTimeout(this.previewTimer);
+              this.setRefreshDisabled(true);
             },
-            toggleActions(el) {
-              const rect = el.getBoundingClientRect();
-              this.actionX = Math.max(12, Math.min(rect.right - 176, window.innerWidth - 188));
-              this.actionY = Math.min(rect.bottom + 8, window.innerHeight - 124);
-              this.actionOpen = !this.actionOpen;
+            beginPreviewInteraction() {
+              this.previewInteracting = true;
+              this.keepPreviewOpen();
+            },
+            endPreviewInteraction() {
+              this.previewInteracting = false;
+              this.keepPreviewOpen();
+            },
+            showAccountPreview(el) {
+              clearTimeout(this.accountPreviewTimer);
+              const pos = this.placeHover(el, 360, 300, 4);
+              this.accountPreviewX = pos.x;
+              this.accountPreviewY = pos.y;
+              this.accountPreviewOpen = true;
+              this.setRefreshDisabled(true);
+            },
+            scheduleAccountPreviewClose() {
+              this.accountPreviewTimer = setTimeout(() => {
+                this.accountPreviewOpen = false;
+                this.restoreRefreshIfIdle();
+              }, 300);
+            },
+            keepAccountPreviewOpen() {
+              clearTimeout(this.accountPreviewTimer);
+              this.setRefreshDisabled(true);
+            },
+            showAuthorPreview(el) {
+              clearTimeout(this.authorPreviewTimer);
+              const pos = this.placeHover(el, 320, null, 4);
+              this.authorPreviewX = pos.x;
+              this.authorPreviewY = pos.y;
+              this.authorPreviewOpen = true;
+              this.setRefreshDisabled(true);
+            },
+            scheduleAuthorPreviewClose() {
+              this.authorPreviewTimer = setTimeout(() => {
+                this.authorPreviewOpen = false;
+                this.restoreRefreshIfIdle();
+              }, 300);
+            },
+            keepAuthorPreviewOpen() {
+              clearTimeout(this.authorPreviewTimer);
+              this.setRefreshDisabled(true);
             },
             showStatus(name, el) {
               clearTimeout(this.statusTimer);
-              const rect = el.getBoundingClientRect();
-              this.statusX = Math.min(rect.left, window.innerWidth - 320);
-              this.statusY = rect.bottom + 8;
+              const pos = this.placeHover(el, 320, null, 4);
+              this.statusX = pos.x;
+              this.statusY = pos.y;
               this.statusOpen = name;
+              this.setRefreshDisabled(true);
             },
             scheduleStatusClose() {
-              this.statusTimer = setTimeout(() => { this.statusOpen = null }, 320);
+              this.statusTimer = setTimeout(() => {
+                this.statusOpen = null;
+                this.restoreRefreshIfIdle();
+              }, 300);
             },
             keepStatusOpen() {
               clearTimeout(this.statusTimer);
+              this.setRefreshDisabled(true);
+            },
+            showSync(el) {
+              clearTimeout(this.syncTimer);
+              const pos = this.placeHover(el, 288, null, 4);
+              this.syncX = pos.x;
+              this.syncY = pos.y;
+              this.syncOpen = true;
+              this.setRefreshDisabled(true);
+            },
+            scheduleSyncClose() {
+              this.syncTimer = setTimeout(() => {
+                this.syncOpen = false;
+                this.restoreRefreshIfIdle();
+              }, 300);
+            },
+            keepSyncOpen() {
+              clearTimeout(this.syncTimer);
+              this.setRefreshDisabled(true);
+            },
+            toggleActions(el) {
+              if (this.actionOpen) {
+                this.closeAction();
+                return;
+              }
+              const rect = el.getBoundingClientRect();
+              this.actionX = Math.max(12, Math.min(rect.right - 176, window.innerWidth - 188));
+              this.actionY = Math.min(rect.bottom + 8, window.innerHeight - 124);
+              this.actionOpen = true;
+              this.setRefreshDisabled(true);
+            },
+            closeAction() {
+              this.actionOpen = false;
+              this.restoreRefreshIfIdle();
+            },
+            openDelete() {
+              this.actionOpen = false;
+              this.deleteOpen = true;
+              this.setRefreshDisabled(true);
+            },
+            closeDelete() {
+              this.deleteOpen = false;
+              this.restoreRefreshIfIdle();
+            },
+            openProject() {
+              this.actionOpen = false;
+              this.projectOpen = true;
+              this.setRefreshDisabled(true);
+            },
+            closeProject() {
+              this.projectOpen = false;
+              this.restoreRefreshIfIdle();
             }
-          }">
-        <td>
+          }'>
+        <td {% if tab == 'awemes' %}@mouseenter="showPreview($el)" @mouseleave="schedulePreviewClose()"{% else %}@mouseenter="showAccountPreview($el)" @mouseleave="scheduleAccountPreviewClose()"{% endif %}>
           <div class="relative min-h-10"
-               {% if tab == 'awemes' %}@mouseenter="showPreview($el)" @mouseleave="schedulePreviewClose()"{% endif %}>
-            <div class="font-medium">{{ record.title or record.display_name or "等待采集" }}</div>
-            <div class="max-w-lg truncate text-xs opacity-55">{{ record.aweme_url or record.source_url or record.profile_url or "" }}</div>
+               >
+            <button type="button"
+                    class="block w-full rounded-md px-1 py-1 text-left transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                    @click.stop="openDetail()">
+              <span class="flex min-w-0 items-center gap-2">
+                <img class="size-5 shrink-0 object-contain" src="{{ platform_logo_src(record.platform) }}" alt="{{ record.platform_display if record.platform_display is defined else display_platform(record.platform) }}">
+                <span class="min-w-0 truncate font-medium text-slate-900">{{ record.title or record.display_name or "等待采集" }}</span>
+              </span>
+              <span class="ml-7 block max-w-lg truncate text-xs opacity-55">{{ record.aweme_url or record.source_url or record.profile_url or "" }}</span>
+            </button>
             {% if tab == 'awemes' %}
+            {% include "partials/aweme_preview_popover.html" %}
+            {% else %}
             <template x-teleport="body">
-            <div class="fixed z-50 w-[28rem] overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-2xl"
-                 x-cloak x-show="previewOpen"
-                 x-transition.opacity.duration.100ms
-                 :style="`left:${previewX}px; top:${previewY}px`"
-                 @mouseenter="keepPreviewOpen()" @mouseleave="schedulePreviewClose()">
-              <div class="flex min-h-40 border-b border-slate-200">
-                <div class="grid w-36 shrink-0 place-items-center bg-slate-100">
-                  {% if record.cover_url %}
-                  <img src="{{ record.cover_url }}" alt="{{ record.title or '作品封面' }}"
-                       class="h-full max-h-44 w-full object-cover">
-                  {% else %}
-                  <div class="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-400">
-                    <svg class="size-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                      <path d="M4 6h16v12H4z"/><path d="m10 9 5 3-5 3V9Z"/>
-                    </svg>
-                    <span class="text-xs">无封面</span>
-                  </div>
+            <div class="fixed z-50 w-[360px] rounded-lg border border-slate-200 bg-white p-3 text-left shadow-xl"
+                 x-cloak x-show="accountPreviewOpen"
+                 :style="`left:${accountPreviewX}px; top:${accountPreviewY}px`"
+                 @mouseenter="keepAccountPreviewOpen()" @mouseleave="scheduleAccountPreviewClose()">
+              <div class="flex items-start gap-3">
+                {% if record.avatar_url %}
+                <img src="{{ record.avatar_url }}" alt="{{ record.display_name or '账号头像' }}" class="size-12 shrink-0 rounded-full object-cover">
+                {% else %}
+                <span class="grid size-12 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-semibold text-slate-500">{{ (record.display_name or record.platform_account_id or "-")[:1] }}</span>
+                {% endif %}
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-semibold text-slate-900">{{ record.display_name or record.platform_account_id or "等待采集" }}</p>
+                  <p class="mt-0.5 truncate text-xs text-slate-500">{{ record.platform_display if record.platform_display is defined else display_platform(record.platform) }} · {{ record.platform_account_id or "-" }}</p>
+                  {% if record.signature %}
+                  <p class="mt-2 line-clamp-2 text-xs leading-5 text-slate-600">{{ record.signature }}</p>
                   {% endif %}
                 </div>
-                <div class="min-w-0 flex-1 p-4">
-                  <div class="mb-2 flex items-start justify-between gap-3">
-                    <div class="min-w-0">
-                      <p class="line-clamp-2 text-base font-semibold leading-6 text-slate-950">{{ record.title or "等待采集" }}</p>
-                      <p class="mt-1 text-xs text-slate-500">{{ record.platform or "待解析" }} · {{ content_type or "unknown" }}</p>
-                    </div>
-                    <span class="mt-1 size-2.5 shrink-0 rounded-full {{ collection_dot }}"></span>
-                  </div>
-                  <dl class="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
-                    <dt class="text-slate-400">作品 URL</dt>
-                    <dd class="truncate text-slate-700">{{ record.aweme_url or record.source_url or "-" }}</dd>
-                    <dt class="text-slate-400">作品 ID</dt>
-                    <dd class="truncate font-mono text-slate-700">{{ record.platform_aweme_id or "-" }}</dd>
-                    <dt class="text-slate-400">本地 ID</dt>
-                    <dd class="truncate font-mono text-slate-700">{{ record.id }}</dd>
-                  </dl>
-                </div>
               </div>
-              {% if record.description %}
-              <p class="max-h-20 overflow-auto border-b border-slate-100 px-4 py-3 text-sm leading-6 text-slate-700">{{ record.description }}</p>
+              <dl class="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <dt class="text-slate-400">采集状态</dt><dd class="truncate text-right text-slate-700">{{ collection_status_display or "-" }}</dd>
+                <dt class="text-slate-400">粉丝</dt><dd class="truncate text-right text-slate-700">{{ record.follower_count_display if record.follower_count_display is defined else display_count(record.follower_count) }}</dd>
+                <dt class="text-slate-400">作品量</dt><dd class="truncate text-right text-slate-700">{{ record.work_count if record.work_count is not none else "-" }}</dd>
+                <dt class="text-slate-400">点赞</dt><dd class="truncate text-right text-slate-700">{{ record.like_count if record.like_count is not none else "-" }}</dd>
+                <dt class="text-slate-400">发布历史</dt><dd class="truncate text-right text-slate-700">{{ record.history_fetched_count or 0 }} 条</dd>
+                <dt class="text-slate-400">最近采集</dt><dd class="truncate text-right text-slate-700">{{ record.last_collected_at or "-" }}</dd>
+              </dl>
+              {% if record.collection_error or record.history_error %}
+              <p class="mt-2 max-h-16 overflow-auto rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-700">{{ record.collection_error or record.history_error }}</p>
               {% endif %}
-              <div class="grid grid-cols-5 border-b border-slate-100 text-center">
-                <div class="px-2 py-3"><p class="text-sm font-semibold text-slate-950">{{ record.play_count if record.play_count is not none else "-" }}</p><p class="mt-0.5 text-[11px] text-slate-400">播放</p></div>
-                <div class="px-2 py-3"><p class="text-sm font-semibold text-slate-950">{{ record.like_count if record.like_count is not none else "-" }}</p><p class="mt-0.5 text-[11px] text-slate-400">点赞</p></div>
-                <div class="px-2 py-3"><p class="text-sm font-semibold text-slate-950">{{ record.collect_count if record.collect_count is not none else "-" }}</p><p class="mt-0.5 text-[11px] text-slate-400">收藏</p></div>
-                <div class="px-2 py-3"><p class="text-sm font-semibold text-slate-950">{{ record.share_count if record.share_count is not none else "-" }}</p><p class="mt-0.5 text-[11px] text-slate-400">转发</p></div>
-                <div class="px-2 py-3"><p class="text-sm font-semibold text-slate-950">{{ record.comment_count if record.comment_count is not none else "-" }}</p><p class="mt-0.5 text-[11px] text-slate-400">评论</p></div>
-              </div>
-              <div class="grid gap-4 p-4 sm:grid-cols-2">
-                <div class="min-w-0">
-                  <p class="mb-2 text-xs font-semibold text-slate-500">评论</p>
-                  {% set comments = record.comments_json if record.comments_json is defined else [] %}
-                  {% if comments %}
-                  <div class="space-y-2">
-                    {% for comment in comments[:3] %}
-                    {% set comment_text = comment.get('text') or comment.get('content') or comment.get('comment_text') or comment.get('desc') or comment|string %}
-                    <p class="line-clamp-2 rounded-md bg-slate-50 px-2 py-1.5 text-xs leading-5 text-slate-600">{{ comment_text }}</p>
-                    {% endfor %}
-                  </div>
-                  {% else %}
-                  <p class="rounded-md bg-slate-50 px-2 py-2 text-xs text-slate-400">暂无评论数据</p>
-                  {% endif %}
-                </div>
-                <div class="min-w-0">
-                  <p class="mb-2 text-xs font-semibold text-slate-500">数据</p>
-                  <dl class="space-y-1 text-xs">
-                    <div class="flex justify-between gap-3"><dt class="text-slate-400">采集状态</dt><dd class="truncate text-slate-700">{{ collection_status or "-" }}</dd></div>
-                    <div class="flex justify-between gap-3"><dt class="text-slate-400">评论状态</dt><dd class="truncate text-slate-700">{{ comment_status or "-" }}</dd></div>
-                    <div class="flex justify-between gap-3"><dt class="text-slate-400">视频</dt><dd class="truncate text-slate-700">{{ record.video_url or record.video_path or "-" }}</dd></div>
-                    <div class="flex justify-between gap-3"><dt class="text-slate-400">采集时间</dt><dd class="truncate text-slate-700">{{ record.last_collected_at or "-" }}</dd></div>
-                  </dl>
-                  {% if record.extra_data_json %}
-                  <p class="mt-2 max-h-16 overflow-auto rounded-md bg-slate-50 px-2 py-1.5 font-mono text-[11px] leading-5 text-slate-500">{{ record.extra_data_json|tojson|truncate(260) }}</p>
-                  {% endif %}
-                </div>
-              </div>
+              <button type="button"
+                      class="btn btn-sm mt-3 w-full bg-slate-900 text-white hover:bg-slate-700"
+                      @click="accountPreviewOpen = false; openDetail()">
+                作者详情
+              </button>
             </div>
             </template>
             {% endif %}
           </div>
         </td>
-        <td>{{ record.platform or "待解析" }}</td>
-        <td>{{ content_type or "unknown" }}</td>
-        {% set next = namespace(url="/?tab=" ~ tab ~ "&page=" ~ pagination.page ~ "&per_page=" ~ pagination.per_page) %}
-        {% for id in selected_group_ids %}
-          {% set next.url = next.url ~ "&group_id=" ~ id %}
-        {% endfor %}
+        {% if tab == 'awemes' %}
+        {% include "partials/aweme_media_cells.html" %}
+        {% endif %}
+        {% if tab == 'awemes' %}
+        <td>
+          {% set author_status = author.collection_status.value if author and author.collection_status.value is defined else author.collection_status if author else none %}
+          {% set author_status_display = author.collection_status_display if author and author.collection_status_display is defined else author_status %}
+          <div class="relative inline-flex min-h-9 max-w-full items-center"
+               @mouseenter="showAuthorPreview($el)"
+               @mouseleave="scheduleAuthorPreviewClose()">
+            {% if author %}
+            {# V1.0 发布隐藏：从作品作者跳转账号采集页的入口暂不开放。
+            <a href="/accounts?project_id={{ selected_project_ids[0] if selected_project_ids else '' }}"
+               class="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 transition hover:bg-slate-100">
+            #}
+            <div class="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1">
+              {% if author.avatar_url %}
+              <img src="{{ author.avatar_url }}" alt="{{ author.display_name or '作者头像' }}" class="size-7 shrink-0 rounded-full object-cover">
+              {% else %}
+              <span class="grid size-7 shrink-0 place-items-center rounded-full bg-slate-200 text-[11px] font-semibold text-slate-500">{{ (author.display_name or author.platform_account_id or "-")[:1] }}</span>
+              {% endif %}
+              <span class="min-w-0 truncate text-sm text-slate-800">{{ author.display_name or author.platform_account_id or "-" }}</span>
+            </div>
+            {# </a> #}
+            {% else %}
+            <div class="inline-flex min-h-8 items-center gap-2 rounded-md px-1.5 py-1 text-slate-400">
+              <span class="size-2.5 rounded-full bg-slate-300"></span>
+              <span class="text-sm">-</span>
+            </div>
+            {% endif %}
+            <template x-teleport="body">
+            <div class="fixed z-50 w-80 rounded-lg border border-slate-200 bg-white p-3 text-left shadow-xl"
+                 x-cloak x-show="authorPreviewOpen"
+                 :style="`left:${authorPreviewX}px; top:${authorPreviewY}px`"
+                 @mouseenter="keepAuthorPreviewOpen()" @mouseleave="scheduleAuthorPreviewClose()">
+              {% if author %}
+              <div class="mb-3 flex items-center gap-3">
+                {% if author.avatar_url %}
+                <img src="{{ author.avatar_url }}" alt="{{ author.display_name or '作者头像' }}" class="size-10 rounded-full object-cover">
+                {% else %}
+                <span class="grid size-10 place-items-center rounded-full bg-slate-200 text-sm font-semibold text-slate-500">{{ (author.display_name or author.platform_account_id or "-")[:1] }}</span>
+                {% endif %}
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-slate-900">{{ author.display_name or author.platform_account_id or "-" }}</p>
+                  <p class="truncate text-xs text-slate-500">{{ author.platform_display if author.platform_display is defined else display_platform(author.platform) }} · {{ author.platform_account_id or "-" }}</p>
+                </div>
+              </div>
+              <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <dt class="text-slate-400">采集状态</dt><dd class="truncate text-right text-slate-700">{{ author_status_display or "-" }}</dd>
+                <dt class="text-slate-400">粉丝</dt><dd class="truncate text-right text-slate-700">{{ author.follower_count_display if author.follower_count_display is defined else display_count(author.follower_count) }}</dd>
+                <dt class="text-slate-400">获赞</dt><dd class="truncate text-right text-slate-700">{{ author.total_favorited or author.like_count or "-" }}</dd>
+                <dt class="text-slate-400">作品量</dt><dd class="truncate text-right text-slate-700">{{ author.work_count if author.work_count is not none else "-" }}</dd>
+                <dt class="text-slate-400">最近采集</dt><dd class="truncate text-right text-slate-700">{{ author.last_collected_at or "-" }}</dd>
+              </dl>
+              {% if author.collection_error %}
+              <p class="mt-2 max-h-16 overflow-auto rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-700">{{ author.collection_error }}</p>
+              {% endif %}
+              {# V1.0 发布隐藏：作者更新/采集入口暂不开放。
+              <form method="post"
+                    action="/actions/accounts"
+                    data-async-list-action
+                    hx-post="/actions/accounts"
+                    hx-target="#data-list"
+                    hx-swap="innerHTML"
+                    class="mt-3">
+                <input type="hidden" name="next_url" value="{{ current_list_url }}">
+                <input type="hidden" name="platform" value="{{ record.platform }}">
+                <input type="hidden" name="platform_account_id" value="{{ record.platform_account_id }}">
+                <input type="hidden" name="collect" value="true">
+                {% for project_id in record_project_ids.get(record.id|string, []) %}
+                <input type="hidden" name="project_ids" value="{{ project_id }}">
+                {% endfor %}
+                <button class="btn btn-sm w-full bg-slate-900 text-white hover:bg-slate-700"
+                        {% if author_status == "running" %}disabled{% endif %}>
+                  {% if author_status in ["failed", "timeout", "cancelled"] %}重试作者采集{% else %}更新作者信息{% endif %}
+                </button>
+              </form>
+              #}
+              <button type="button" class="btn btn-sm mt-3 w-full" disabled>采集作者信息（敬请期待...）</button>
+              {% else %}
+              <div class="flex items-start gap-3">
+                <span class="mt-1 size-2.5 shrink-0 rounded-full bg-slate-300"></span>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-slate-900">作者未采集</p>
+                  <p class="mt-1 text-xs text-slate-500">
+                    {% if record.platform_account_id %}
+                    作者信息采集入口敬请期待。
+                    {% else %}
+                    当前作品还没有平台账号 ID，需先完成作品采集。
+                    {% endif %}
+                  </p>
+                </div>
+              </div>
+              <dl class="mt-3 grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
+                <dt class="text-slate-400">平台</dt><dd class="truncate text-slate-700">{{ record.platform_display if record.platform_display is defined else display_platform(record.platform) }}</dd>
+                <dt class="text-slate-400">账号 ID</dt><dd class="truncate font-mono text-slate-700">{{ record.platform_account_id or "-" }}</dd>
+              </dl>
+              {# V1.0 发布隐藏：作者采集入口暂不开放。
+              <form method="post"
+                    action="/actions/accounts"
+                    data-async-list-action
+                    hx-post="/actions/accounts"
+                    hx-target="#data-list"
+                    hx-swap="innerHTML"
+                    class="mt-3">
+                <input type="hidden" name="next_url" value="{{ current_list_url }}">
+                <input type="hidden" name="platform" value="{{ record.platform }}">
+                <input type="hidden" name="platform_account_id" value="{{ record.platform_account_id }}">
+                <input type="hidden" name="collect" value="true">
+                {% for project_id in record_project_ids.get(record.id|string, []) %}
+                <input type="hidden" name="project_ids" value="{{ project_id }}">
+                {% endfor %}
+                <button class="btn btn-sm w-full bg-slate-900 text-white hover:bg-slate-700"
+                        {% if not record.platform_account_id %}disabled{% endif %}>
+                  采集作者信息
+                </button>
+              </form>
+              #}
+              <button type="button" class="btn btn-sm mt-3 w-full" disabled>采集作者信息（敬请期待...）</button>
+              {% endif %}
+            </div>
+            </template>
+          </div>
+        </td>
+        {% endif %}
+        {% if tab == 'awemes' %}
+        <td>{{ record.content_type_display if record.content_type_display is defined else display_content_type(content_type) }}</td>
+        {% set next = namespace(url=current_list_url) %}
         <td><span class="inline-flex items-center gap-2"><span class="size-2.5 cursor-pointer rounded-full {{ collection_dot }}"
                   @mouseenter="showStatus('collection', $el)" @mouseleave="scheduleStatusClose()"></span>{{ record.play_count if record.play_count is not none else "-" }}</span></td>
         <td><span class="inline-flex items-center gap-2"><span class="size-2.5 cursor-pointer rounded-full {{ collection_dot }}"
@@ -193,7 +471,7 @@
                   @mouseenter="showStatus('comments', $el)" @mouseleave="scheduleStatusClose()"></span>{{ record.comment_count if record.comment_count is not none else "-" }}</span>
           <template x-teleport="body">
           <div class="fixed z-50 w-80 rounded-lg border border-slate-200 bg-white p-3 text-left shadow-xl"
-               x-cloak x-show="statusOpen"
+               x-cloak x-show="statusOpen === 'collection' || statusOpen === 'comments' || statusOpen === 'transcription'"
                :style="`left:${statusX}px; top:${statusY}px`"
                @mouseenter="keepStatusOpen()" @mouseleave="scheduleStatusClose()">
             <div x-show="statusOpen === 'collection'">
@@ -205,7 +483,7 @@
                 <span class="mt-1 size-2.5 shrink-0 rounded-full {{ collection_dot }}"></span>
               </div>
               <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
-                <dt>平台</dt><dd class="truncate text-right text-slate-700">{{ record.platform or "待解析" }}</dd>
+                <dt>平台</dt><dd class="truncate text-right text-slate-700">{{ record.platform_display if record.platform_display is defined else display_platform(record.platform) }}</dd>
                 <dt>平台 ID</dt><dd class="truncate text-right text-slate-700">{{ record.platform_aweme_id or "-" }}</dd>
                 <dt>最近完成</dt><dd class="truncate text-right text-slate-700">{{ record.last_collected_at or record.collection_finished_at or "-" }}</dd>
               </dl>
@@ -222,7 +500,7 @@
                   <input type="hidden" name="next_url" value="{{ next.url }}">
                   <button class="btn btn-sm w-full bg-slate-900 text-white hover:bg-slate-700"
                           {% if collection_status == "running" %}disabled{% endif %}>
-                    {% if collection_status in ["failed", "timeout", "cancelled"] %}重试{% else %}采集{% endif %}
+                    {% if collection_status == "running" %}采集中{% elif collection_status in ["failed", "timeout", "cancelled"] %}重试采集{% elif collection_status == "succeeded" %}重新采集{% else %}采集{% endif %}
                   </button>
                 </form>
                 {% if tab == 'awemes' %}
@@ -257,6 +535,7 @@
               {% if record.comment_collection_error %}
               <p class="mt-2 max-h-16 overflow-auto rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-700">{{ record.comment_collection_error }}</p>
               {% endif %}
+              {# V1.0 发布隐藏：评论采集动作暂不开放，原采集表单保留在下方注释中。
               {% if tab == 'awemes' %}
               <div class="mt-3 grid grid-cols-2 gap-2">
                 <form method="post"
@@ -266,8 +545,20 @@
                       hx-target="#data-list"
                       hx-swap="innerHTML">
                   <input type="hidden" name="next_url" value="{{ next.url }}">
+                  <label class="mb-2 block text-xs text-slate-500">
+                    最大数量
+                    <input class="input input-bordered input-xs mt-1 w-full" type="number" min="1" max="5000" name="comment_max_count" value="{{ (record.comment_provider_state_json or {}).get('default', {}).get('max_comments', 100) }}">
+                  </label>
+                  <label class="mb-2 block text-xs text-slate-500">
+                    最大翻页
+                    <input class="input input-bordered input-xs mt-1 w-full" type="number" min="1" max="100" name="max_pages" value="{{ (record.comment_provider_state_json or {}).get('default', {}).get('max_pages', 1) }}">
+                  </label>
+                  <label class="mb-2 block text-xs text-slate-500">
+                    最早日期
+                    <input class="input input-bordered input-xs mt-1 w-full" type="date" name="earliest_date">
+                  </label>
                   <button class="btn btn-sm w-full bg-slate-900 text-white hover:bg-slate-700"
-                          {% if comment_status == "running" %}disabled{% endif %}>
+                          {% if comment_status in ["pending", "running", "retry_wait"] %}disabled{% endif %}>
                     {% if comment_status in ["failed", "timeout", "cancelled"] %}重试{% else %}采集评论{% endif %}
                   </button>
                 </form>
@@ -283,48 +574,219 @@
                 </form>
               </div>
               {% endif %}
+              #}
+              <button type="button" class="btn btn-sm mt-3 w-full" disabled>采集评论（敬请期待...）</button>
+            </div>
+            <div x-show="statusOpen === 'transcription'">
+              <div class="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-slate-900">视频转写</p>
+                  <p class="mt-1 text-xs text-slate-500">{{ transcription_title }}</p>
+                </div>
+                <span class="mt-1 size-2.5 shrink-0 rounded-full {{ transcription_dot }}"></span>
+              </div>
+              <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
+                <dt>转写状态</dt><dd class="truncate text-right text-slate-700">{{ transcription_status_display or "-" }}</dd>
+                <dt>转写任务</dt><dd class="truncate text-right text-slate-700">{{ current_transcription.id if current_transcription else "未创建" }}</dd>
+                <dt>本地视频</dt><dd class="truncate text-right text-slate-700">{{ "已下载" if record.video_path else "未下载" }}</dd>
+                <dt>更新时间</dt><dd class="truncate text-right text-slate-700">{{ record.transcription_updated_at or "-" }}</dd>
+              </dl>
+              <div class="mt-3 max-h-28 overflow-auto rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs leading-5 text-slate-700">
+                {{ record.transcription_text or "暂无转写文本。" }}
+              </div>
+              {% if worker_health and worker_health.status != "running" and transcription_status in ["pending", "retry_wait", "running"] %}
+              <p class="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-700">Worker 未运行，转写任务不会继续执行。</p>
+              {% endif %}
+              {% if current_transcription %}
+              <a class="btn btn-sm mt-3 w-full border-slate-900 bg-slate-900 text-white hover:border-slate-700 hover:bg-slate-700"
+                 href="/transcriptions?transcription_id={{ current_transcription.id }}"
+                 @click.prevent="openModal('/partials/transcriptions/{{ current_transcription.id }}/detail')">查看转写详情</a>
+              <div class="mt-2 grid grid-cols-2 gap-2">
+                <form method="post"
+                      action="/actions/transcriptions/{{ current_transcription.id }}/retry"
+                      data-async-list-action
+                      hx-post="/actions/transcriptions/{{ current_transcription.id }}/retry"
+                      hx-target="#data-list"
+                      hx-swap="innerHTML">
+                  <input type="hidden" name="next_url" value="{{ next.url }}">
+                  <button class="btn btn-sm w-full bg-slate-900 text-white hover:bg-slate-700"
+                          {% if transcription_status in ["pending", "retry_wait", "running"] %}disabled{% endif %}>
+                    {% if transcription_status == "running" %}转写中{% elif transcription_status in ["pending", "retry_wait"] %}等待转写{% elif transcription_status == "succeeded" %}重新转写{% elif transcription_status in ["failed", "timeout", "cancelled"] %}重试转写{% else %}重试转写{% endif %}
+                  </button>
+                </form>
+                <form method="post"
+                      action="/actions/transcriptions/{{ current_transcription.id }}/cancel"
+                      data-async-list-action
+                      hx-post="/actions/transcriptions/{{ current_transcription.id }}/cancel"
+                      hx-target="#data-list"
+                      hx-swap="innerHTML">
+                  <input type="hidden" name="next_url" value="{{ next.url }}">
+                  <button class="btn btn-sm btn-ghost w-full text-slate-600"
+                          {% if transcription_status in ["succeeded", "cancelled", "not_requested"] %}disabled{% endif %}>取消转写</button>
+                </form>
+              </div>
+              {% else %}
+              <form method="post"
+                    action="/actions/awemes/{{ record.id }}/transcribe"
+                    data-async-list-action
+                    hx-post="/actions/awemes/{{ record.id }}/transcribe"
+                    hx-target="#data-list"
+                    hx-swap="innerHTML"
+                    class="mt-3">
+                <input type="hidden" name="next_url" value="{{ next.url }}">
+                <button class="btn btn-sm w-full bg-slate-900 text-white hover:bg-slate-700">
+                  发起转写
+                </button>
+              </form>
+              {% endif %}
             </div>
           </div>
           </template>
         </td>
         <td>
+          {% if supports_transcription %}
+          <span class="inline-flex items-center gap-2">
+            <span class="size-2.5 cursor-pointer rounded-full {{ transcription_dot }}"
+                  @mouseenter="showStatus('transcription', $el)" @mouseleave="scheduleStatusClose()"></span>
+            <span class="truncate text-xs text-slate-600">{{ transcription_status_display or "-" }}</span>
+          </span>
+          {% else %}
+          <span class="text-slate-300">-</span>
+          {% endif %}
+        </td>
+        {% else %}
+        {% set next = namespace(url=current_list_url) %}
+        <td>
+          <img class="mx-auto size-5 object-contain" src="{{ platform_logo_src(record.platform) }}" alt="{{ record.platform_display if record.platform_display is defined else display_platform(record.platform) }}" title="{{ record.platform_display if record.platform_display is defined else display_platform(record.platform) }}">
+        </td>
+        <td><span class="block truncate font-mono text-xs text-slate-600">{{ record.platform_account_id or "-" }}</span></td>
+        <td>{{ record.follower_count_display if record.follower_count_display is defined else display_count(record.follower_count) }}</td>
+        <td>{{ record.like_count if record.like_count is not none else "-" }}</td>
+        <td>{{ record.comment_count if record.comment_count is not none else "-" }}</td>
+        <td>{{ record.work_count if record.work_count is not none else "-" }}</td>
+        <td>
+          <span class="inline-flex items-center gap-2">
+            <span class="size-2.5 cursor-pointer rounded-full {{ collection_dot }}"
+                  @mouseenter="showStatus('collection', $el)" @mouseleave="scheduleStatusClose()"></span>
+            <span class="truncate text-xs text-slate-600">{{ collection_status_display or "-" }}</span>
+          </span>
+          <template x-teleport="body">
+          <div class="fixed z-50 w-80 rounded-lg border border-slate-200 bg-white p-3 text-left shadow-xl"
+               x-cloak x-show="statusOpen === 'collection'"
+               :style="`left:${statusX}px; top:${statusY}px`"
+               @mouseenter="keepStatusOpen()" @mouseleave="scheduleStatusClose()">
+            <div class="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <p class="text-sm font-semibold text-slate-900">账号采集状态</p>
+                <p class="mt-1 text-xs text-slate-500">{{ collection_title }}</p>
+              </div>
+              <span class="mt-1 size-2.5 shrink-0 rounded-full {{ collection_dot }}"></span>
+            </div>
+            <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
+              <dt>平台</dt><dd class="truncate text-right text-slate-700">{{ record.platform_display if record.platform_display is defined else display_platform(record.platform) }}</dd>
+              <dt>账号 ID</dt><dd class="truncate text-right font-mono text-slate-700">{{ record.platform_account_id or "-" }}</dd>
+              <dt>最近完成</dt><dd class="truncate text-right text-slate-700">{{ record.last_collected_at or record.collection_finished_at or "-" }}</dd>
+            </dl>
+            {% if record.collection_error %}
+            <p class="mt-2 max-h-16 overflow-auto rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-700">{{ record.collection_error }}</p>
+            {% endif %}
+            <form method="post"
+                  action="/actions/accounts/{{ record.id }}/collect"
+                  data-async-list-action
+                  hx-post="/actions/accounts/{{ record.id }}/collect"
+                  hx-target="#data-list"
+                  hx-swap="innerHTML"
+                  class="mt-3">
+              <input type="hidden" name="next_url" value="{{ next.url }}">
+              <button class="btn btn-sm w-full bg-slate-900 text-white hover:bg-slate-700"
+                      {% if collection_status == "running" %}disabled{% endif %}>
+                {% if collection_status == "running" %}采集中{% elif collection_status in ["failed", "timeout", "cancelled"] %}重试采集{% elif collection_status == "succeeded" %}重新采集{% else %}采集{% endif %}
+              </button>
+            </form>
+          </div>
+          </template>
+        </td>
+        {% endif %}
+        <td>
           {% set syncs = record_syncs.get(record.id|string, []) %}
           <div class="relative inline-flex min-h-8 items-center gap-1.5"
-               x-data="{ open: false, x: 0, y: 0 }"
-               @mouseenter="const rect = $el.getBoundingClientRect(); x = Math.min(rect.left, window.innerWidth - 304); y = rect.bottom + 8; open = true"
-               @mouseleave="open = false">
+               @mouseenter="showSync($el)"
+               @mouseleave="scheduleSyncClose()">
             {% if syncs %}
-              {% for sync in syncs %}
+              {% for sync in syncs[:3] %}
                 {% set status = sync.status %}
-                <span class="size-2.5 rounded-full {% if status == 'succeeded' %}bg-emerald-500{% elif status in ['failed', 'timeout'] %}bg-red-500{% elif status == 'running' %}bg-amber-400{% else %}bg-slate-300{% endif %} {% if status == 'running' %}animate-pulse{% endif %}"
-                      title="{{ sync.storer.name if sync.storer else '未知存储' }}"></span>
+                <span class="relative grid size-6 place-items-center rounded-md border border-slate-200 bg-white text-slate-500 shadow-sm"
+                      title="{{ sync.storer.name if sync.storer else '未知存储' }}">
+                  <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path d="M9 7h-1a4 4 0 0 0 0 8h1"/><path d="M15 7h1a4 4 0 0 1 0 8h-1"/><path d="M8 12h8"/>
+                  </svg>
+                  <span class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border border-white {% if status == 'succeeded' %}bg-emerald-500{% elif status in ['failed', 'timeout', 'cancelled'] %}bg-red-500{% elif status in ['pending', 'retry_wait', 'running'] %}bg-amber-400 animate-pulse{% else %}bg-slate-300{% endif %}"></span>
+                </span>
               {% endfor %}
+              {% if syncs|length > 3 %}
+              <span class="grid h-6 min-w-6 place-items-center rounded-md border border-slate-200 bg-white px-1.5 text-[11px] font-semibold text-slate-500 shadow-sm">+{{ syncs|length - 3 }}</span>
+              {% endif %}
             {% else %}
-              <span class="size-2.5 rounded-full bg-slate-300" title="未开始同步"></span>
+              <span class="inline-flex h-6 items-center gap-1 rounded-md border border-slate-200 bg-white px-1.5 text-slate-400 shadow-sm" title="未开始同步">
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M9 7h-1a4 4 0 0 0 0 8h1"/><path d="M15 7h1a4 4 0 0 1 0 8h-1"/><path d="M8 12h8"/>
+                </svg>
+                <span class="text-[11px] font-semibold leading-none">0</span>
+                <span class="size-1.5 rounded-full bg-slate-300"></span>
+              </span>
             {% endif %}
             <template x-teleport="body">
-            <div class="pointer-events-none fixed z-50 w-72 rounded-lg border border-slate-200 bg-white p-3 text-left shadow-xl"
-                 x-cloak x-show="open"
-                 :style="`left:${x}px; top:${y}px`">
+            <div class="fixed z-50 w-[360px] rounded-lg border border-slate-200 bg-white p-3 text-left shadow-xl"
+                 x-cloak x-show="syncOpen"
+                 :style="`left:${syncX}px; top:${syncY}px`"
+                 @mouseenter="keepSyncOpen()" @mouseleave="scheduleSyncClose()">
               {% if syncs %}
                 <div class="space-y-2">
                 {% for sync in syncs %}
                   {% set status = sync.status %}
-                  <div class="flex items-start gap-3">
-                    <span class="mt-1.5 size-2.5 shrink-0 rounded-full {% if status == 'succeeded' %}bg-emerald-500{% elif status in ['failed', 'timeout'] %}bg-red-500{% elif status == 'running' %}bg-amber-400{% else %}bg-slate-300{% endif %} {% if status == 'running' %}animate-pulse{% endif %}"></span>
-                    <div class="min-w-0">
-                      <p class="truncate text-sm font-medium text-slate-900">{{ sync.storer.name if sync.storer else "未知存储" }}</p>
-                      <p class="text-xs text-slate-500">
-                        {{ sync.storer.type if sync.storer else "unknown" }} ·
-                        {% if status == 'succeeded' %}同步成功
-                        {% elif status in ['failed', 'timeout'] %}同步失败
-                        {% elif status == 'running' %}同步中
-                        {% elif status in ['pending', 'retry_wait'] %}等待同步
-                        {% else %}还没开始同步{% endif %}
-                      </p>
-                      {% if sync.error_message %}
-                      <p class="mt-1 max-h-8 overflow-hidden text-xs text-red-600">{{ sync.error_message }}</p>
-                      {% endif %}
+                  {% set sync_dot = "bg-emerald-500" if status == "succeeded" else "bg-red-500" if status in ["failed", "timeout", "cancelled"] else "bg-amber-400 animate-pulse" if status in ["pending", "retry_wait", "running"] else "bg-slate-300" %}
+                  {% set sync_title = "同步成功" if status == "succeeded" else "同步失败" if status in ["failed", "timeout"] else "同步已取消" if status == "cancelled" else "同步中" if status == "running" else "等待同步" if status == "pending" else "等待重试同步" if status == "retry_wait" else "还没开始同步" %}
+                  <div class="rounded-md border border-slate-200 bg-white p-2.5">
+                    <div class="flex items-start gap-3">
+                      <span class="mt-1.5 size-2.5 shrink-0 rounded-full {{ sync_dot }}"></span>
+                      <div class="min-w-0 flex-1">
+                        <div class="flex min-w-0 items-start justify-between gap-2">
+                          <div class="min-w-0">
+                            <p class="truncate text-sm font-medium text-slate-900">{{ sync.storer.name if sync.storer else "未知存储" }}</p>
+                            <p class="text-xs text-slate-500">{{ sync.storer.type if sync.storer else "unknown" }} · {{ sync_title }}</p>
+                          </div>
+                          {% if not sync.enabled %}
+                          <span class="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-500">已暂停</span>
+                          {% endif %}
+                        </div>
+                        {% if sync.error_message %}
+                        <p class="mt-1 max-h-10 overflow-auto text-xs text-red-600">{{ sync.error_message }}</p>
+                        {% endif %}
+                      </div>
+                    </div>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                      <form method="post"
+                            action="/actions/syncs/{{ sync.id }}/retry"
+                            data-async-list-action
+                            hx-post="/actions/syncs/{{ sync.id }}/retry"
+                            hx-target="#data-list"
+                            hx-swap="innerHTML">
+                        <input type="hidden" name="next_url" value="{{ current_list_url }}">
+                        <button class="btn btn-sm w-full bg-slate-900 text-white hover:bg-slate-700"
+                                {% if status in ["pending", "retry_wait", "running"] %}disabled{% endif %}>
+                          {% if status == "running" %}同步中{% elif status in ["pending", "retry_wait"] %}等待同步{% elif status == "succeeded" %}再次同步{% elif status in ["failed", "timeout", "cancelled"] %}重试{% else %}同步{% endif %}
+                        </button>
+                      </form>
+                      <form method="post"
+                            action="/actions/syncs/{{ sync.id }}/cancel"
+                            data-async-list-action
+                            hx-post="/actions/syncs/{{ sync.id }}/cancel"
+                            hx-target="#data-list"
+                            hx-swap="innerHTML">
+                        <input type="hidden" name="next_url" value="{{ current_list_url }}">
+                        <button class="btn btn-sm btn-ghost w-full text-slate-600"
+                                {% if status in ["succeeded", "failed", "timeout", "cancelled", "not_requested"] %}disabled{% endif %}>取消</button>
+                      </form>
                     </div>
                   </div>
                 {% endfor %}
@@ -343,8 +805,8 @@
                   title="操作"
                   aria-label="操作"
                   @click.stop="toggleActions($el)"
-                  @keydown.escape.window="actionOpen=false"
-                  @click.outside="actionOpen=false">
+                  @keydown.escape.window="closeAction()"
+                  @click.outside="closeAction()">
             <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/>
             </svg>
@@ -354,14 +816,14 @@
                x-cloak
                x-show="actionOpen"
                :style="`left:${actionX}px; top:${actionY}px`"
-               @click.outside="actionOpen=false"
-               @keydown.escape.window="actionOpen=false">
+               @click.outside="closeAction()"
+               @keydown.escape.window="closeAction()">
             <button type="button"
                     class="flex min-h-9 w-full items-center rounded-md px-3 text-sm text-slate-700 hover:bg-slate-100"
-                    @click="actionOpen=false; groupOpen=true">编辑</button>
+                    @click="openProject()">编辑</button>
             <button type="button"
                     class="flex min-h-9 w-full items-center rounded-md px-3 text-sm text-red-600 hover:bg-red-50"
-                    @click="actionOpen=false; deleteOpen=true">删除</button>
+                    @click="openDelete()">删除</button>
           </div>
           </template>
           {% set delete_files = record_delete_files.get(record.id|string, []) %}
@@ -406,39 +868,39 @@
                     hx-swap="innerHTML">
                 <input type="hidden" name="next_url" value="{{ next.url }}">
                 <div class="modal-action">
-                  <button type="button" class="btn btn-ghost" @click="deleteOpen=false">取消</button>
+                  <button type="button" class="btn btn-ghost" @click="closeDelete()">取消</button>
                   <button class="btn bg-red-600 text-white hover:bg-red-700">确认删除</button>
                 </div>
               </form>
             </div>
-            <div class="modal-backdrop" @click="deleteOpen=false"></div>
+            <div class="modal-backdrop" @click="closeDelete()"></div>
           </div>
           </template>
-          <div class="modal text-left" :class="{ 'modal-open': groupOpen }">
+          <div class="modal text-left" :class="{ 'modal-open': projectOpen }">
             <div class="modal-box">
-              <h3 class="mb-4 text-lg font-bold">管理分组</h3>
+              <h3 class="mb-4 text-lg font-bold">管理项目</h3>
               <form method="post"
-                    action="/actions/{% if tab == 'awemes' %}awemes{% else %}accounts{% endif %}/{{ record.id }}/groups">
+                    action="/actions/{% if tab == 'awemes' %}awemes{% else %}accounts{% endif %}/{{ record.id }}/projects">
                 <div class="grid grid-cols-2 gap-3">
-                  {% for group in groups %}
+                  {% for project in projects %}
                   <label class="flex items-center gap-2">
                     <input class="checkbox checkbox-sm" type="checkbox"
-                           name="group_ids" value="{{ group.id }}"
-                           {% if group.id|string in record_group_ids.get(record.id|string, []) %}checked{% endif %}>
-                    {{ group.name }}
+                           name="project_ids" value="{{ project.id }}"
+                           {% if project.id|string in record_project_ids.get(record.id|string, []) %}checked{% endif %}>
+                    {{ project.name }}
                   </label>
                   {% endfor %}
                 </div>
                 <div class="alert alert-warning mt-4 text-sm">
-                  移出分组不会删除已经建立的同步关系或 Notion 远端数据。
+                  移出项目不会删除已经建立的同步关系或 Notion 远端数据。
                 </div>
                 <div class="modal-action">
-                  <button type="button" class="btn" @click="groupOpen=false">取消</button>
+                  <button type="button" class="btn" @click="closeProject()">取消</button>
                   <button class="btn btn-primary">保存</button>
                 </div>
               </form>
             </div>
-            <div class="modal-backdrop" @click="groupOpen=false"></div>
+            <div class="modal-backdrop" @click="closeProject()"></div>
           </div>
         </td>
       </tr>
@@ -449,16 +911,16 @@
   <div class="flex min-h-14 shrink-0 items-center justify-between border-t border-base-300 px-4 text-sm text-slate-500">
     <span>第 {{ pagination.page }} 页 · 本页 {{ records|length }} 条</span>
     <div class="join">
-      {% if pagination.page > 1 %}
-      <a class="btn join-item btn-sm"
-         href="/?tab={{ tab }}&page={{ pagination.page - 1 }}&per_page={{ pagination.per_page }}{% for id in selected_group_ids %}&group_id={{ id }}{% endfor %}">上一页</a>
+	      {% if pagination.page > 1 %}
+	      <a class="btn join-item btn-sm"
+	         href="{{ base_path }}?page={{ pagination.page - 1 }}&per_page={{ pagination.per_page }}{% for id in selected_project_ids %}&project_id={{ id }}{% endfor %}">上一页</a>
       {% else %}
       <button class="btn join-item btn-sm" disabled>上一页</button>
       {% endif %}
       <button class="btn join-item btn-sm btn-active">{{ pagination.page }}</button>
-      {% if pagination.has_next %}
-      <a class="btn join-item btn-sm"
-         href="/?tab={{ tab }}&page={{ pagination.page + 1 }}&per_page={{ pagination.per_page }}{% for id in selected_group_ids %}&group_id={{ id }}{% endfor %}">下一页</a>
+	      {% if pagination.has_next %}
+	      <a class="btn join-item btn-sm"
+	         href="{{ base_path }}?page={{ pagination.page + 1 }}&per_page={{ pagination.per_page }}{% for id in selected_project_ids %}&project_id={{ id }}{% endfor %}">下一页</a>
       {% else %}
       <button class="btn join-item btn-sm" disabled>下一页</button>
       {% endif %}
@@ -468,6 +930,7 @@
 </div>
 {% else %}
 <div class="py-20 text-center opacity-60">
-  {% if selected_group_ids %}所选分组中暂无数据。{% else %}暂无数据。{% endif %}
+  {% if selected_project_ids %}当前项目中暂无数据。{% else %}暂无数据。{% endif %}
 </div>
 {% endif %}
+</div>

@@ -1,4 +1,4 @@
-<div x-data='providerServiceSettings({{ provider_catalog|tojson }})'
+<div x-data='providerServiceConfig({{ provider_catalog|tojson }})'
      x-init="init()"
      @provider-status-updated.window="handleStatusEvent($event.detail)">
   <div class="flex flex-wrap items-start justify-between gap-3">
@@ -6,10 +6,6 @@
       <h2 class="text-lg font-semibold text-slate-950">服务状态</h2>
       <p class="mt-1 text-sm text-slate-500">为每项服务选择并配置 Provider。</p>
     </div>
-    <button type="button"
-            class="btn btn-sm"
-            :disabled="busy"
-            @click="refreshAll()">刷新状态</button>
   </div>
 
   <div class="mt-4 grid overflow-hidden rounded-lg border border-slate-200 md:grid-cols-2">
@@ -26,10 +22,16 @@
                :class="statusTextClass(service.status)"
                x-text="service.message || stateText(service.status)"></div>
         </div>
-        <button type="button"
-                class="btn btn-sm shrink-0"
-                :data-provider-type="service.type"
-                @click="configure(service)">配置</button>
+        <div class="flex shrink-0 items-center gap-2">
+          <button type="button"
+                  class="btn btn-ghost btn-sm"
+                  :disabled="busy"
+                  @click="refreshService(service)">重新检查</button>
+          <button type="button"
+                  class="btn btn-sm"
+                  :data-provider-type="service.type"
+                  @click="configure(service)">配置</button>
+        </div>
       </div>
     </template>
   </div>
@@ -38,15 +40,24 @@
 </div>
 
 <script>
-function providerServiceSettings(catalog) {
+function providerServiceConfig(catalog) {
+  // V1.0 发布隐藏：评论采集和账号采集 Provider 暂不在设置页展示。
+  const v1HiddenServiceTypes = new Set([
+    'douyin_comment_collect',
+    'xiaohongshu_comment_collect',
+    'wechat_channels_comment_collect',
+    'wechat_mp_comment_collect',
+    'douyin_account_collect',
+    'xiaohongshu_account_collect',
+    'wechat_channels_account_collect',
+    'wechat_mp_account_collect'
+  ]);
   const labels = {
     douyin_aweme_collect: '抖音数据采集',
     xiaohongshu_aweme_collect: '小红书数据采集',
     wechat_channels_aweme_collect: '视频号数据采集',
     wechat_mp_aweme_collect: '公众号数据采集',
-    xiaohongshu_comment_collect: '小红书评论下载',
-    account_collect: '账号数据采集',
-    video_transcription: '视频转写'
+    video_transcription: '视频文字转写'
   };
 
   return {
@@ -66,7 +77,7 @@ function providerServiceSettings(catalog) {
       const types = [
         ...Object.keys(labels).filter((type) => availableTypes.has(type)),
         ...Array.from(availableTypes).filter((type) => !labels[type])
-      ];
+      ].filter((type) => !v1HiddenServiceTypes.has(type));
       this.services = types.map((type) => {
         const provider = (catalog.providers || []).find(
           (item) => item.type === type && item.namespace === selected[type]
@@ -80,7 +91,7 @@ function providerServiceSettings(catalog) {
           message: '获取中'
         };
       });
-      this.refreshAll();
+      this.refreshAll(false);
     },
     configure(service) {
       window.dispatchEvent(new CustomEvent('open-provider-config', {
@@ -91,22 +102,48 @@ function providerServiceSettings(catalog) {
       if (detail?.state) {
         this.applyState(detail.state);
       } else {
-        this.refreshAll();
+        this.refreshAll(false);
       }
     },
     applyState(state) {
       const service = this.services.find((item) => item.type === state.type);
       if (service) Object.assign(service, state);
     },
-    async refreshAll() {
+    async refreshService(service) {
+      if (this.busy || !service?.type) return;
+      this.busy = true;
+      this.error = '';
+      try {
+        const response = await fetch(
+          `/api/v1/providers/${encodeURIComponent(service.type)}/status/refresh`,
+          {
+            method: 'POST',
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin'
+          }
+        );
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        this.applyState(await response.json());
+        this.loaded = true;
+      } catch (error) {
+        this.error = 'Provider 状态检查失败';
+      } finally {
+        this.busy = false;
+      }
+    },
+    async refreshAll(force = false) {
       if (this.busy) return;
       this.busy = true;
       this.error = '';
       try {
-        const response = await fetch('/api/v1/providers/status', {
-          headers: { Accept: 'application/json' },
-          credentials: 'same-origin'
-        });
+        const response = await fetch(
+          force ? '/api/v1/providers/status/refresh' : '/api/v1/providers/status',
+          {
+            method: force ? 'POST' : 'GET',
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin'
+          }
+        );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         const returnedTypes = new Set();

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import logging
 import signal
 import subprocess
 import time
@@ -12,19 +13,28 @@ from uuid import UUID
 from sqlmodel import select
 import psutil
 
-from cjdb_collectors.config import PROJECT_ROOT, Settings
+from cjdb_collectors.settings import PROJECT_ROOT, Settings
 from cjdb_collectors.models import WorkerTask
 from cjdb_collectors.models import WorkerTaskType
 
 from .base import NotFoundError, SessionFactory, as_uuid
+from .logger import LoggerService, LogType
+
+logger = logging.getLogger(__name__)
 
 
 class WorkerService:
     def __init__(
-        self, session_factory: SessionFactory, settings: Settings | None = None
+        self,
+        session_factory: SessionFactory,
+        settings: Settings | None = None,
+        logger_service: LoggerService | None = None,
     ) -> None:
         self._session = session_factory
         self.settings = settings
+        if settings is not None:
+            LoggerService.configure(settings=settings)
+        self.logger_service = logger_service or LoggerService
 
     def list(self, task_type: str | None = None) -> list[WorkerTask]:
         with self._session() as session:
@@ -117,7 +127,6 @@ class WorkerService:
             "heartbeat_at": heartbeat_at.isoformat() if heartbeat_at else None,
             "heartbeat_age_seconds": heartbeat_age_seconds,
             "heartbeat_stale": worker_running and heartbeat_stale,
-            "log_path": str(self._log_path) if self.settings else None,
         }
 
     @property
@@ -128,9 +137,9 @@ class WorkerService:
 
     @property
     def _log_path(self) -> Path:
-        if not self.settings:
-            raise RuntimeError("worker settings are unavailable")
-        return Path(self.settings.app.logs_dir) / "worker.log"
+        if self.logger_service is None:
+            raise RuntimeError("logger service is unavailable")
+        return self.logger_service.get_log_path(LogType.WORKER)
 
     def _worker_pid(self) -> int | None:
         try:
@@ -165,46 +174,69 @@ class WorkerService:
     def start_worker(self) -> dict:
         existing = self._worker_pid()
         if existing and self._pid_alive(existing):
+            logger.info("Worker 启动请求忽略：已有运行进程 pid=%s", existing)
+            self._append_worker_log(f"Worker 启动请求忽略：已有运行进程 pid={existing}")
             return {"status": "running", "pid": existing}
+        logger.info("Worker 启动请求：log_path=%s", self._log_path)
+        self._append_worker_log("Worker 启动请求")
         self._pid_path.parent.mkdir(parents=True, exist_ok=True)
         self._pid_path.unlink(missing_ok=True)
-        log = self._log_path.open("ab")
-        process = subprocess.Popen(
-            [
-                str(PROJECT_ROOT / "cjdb"),
-                "worker",
-            ],
-            stdin=subprocess.DEVNULL,
-            stdout=log,
-            stderr=subprocess.STDOUT,
-            cwd=str(PROJECT_ROOT),
-            start_new_session=True,
-            close_fds=True,
-        )
-        log.close()
+        with self.logger_service.open_binary_append(self._log_path) as log:
+            process = subprocess.Popen(
+                [
+                    str(PROJECT_ROOT / "cjdb"),
+                    "worker",
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                cwd=str(PROJECT_ROOT),
+                start_new_session=True,
+                close_fds=True,
+            )
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline:
             pid = self._worker_pid()
             if pid:
+                logger.info("Worker 启动成功：pid=%s", pid)
+                self._append_worker_log(f"Worker 启动成功：pid={pid}")
                 return {"status": "running", "pid": pid}
             if process.poll() is not None:
+                logger.error("Worker 启动失败：launcher_pid=%s", process.pid)
+                self._append_worker_log(f"Worker 启动失败：launcher_pid={process.pid}")
                 return {
                     "status": "failed",
                     "pid": None,
                     "launcher_pid": process.pid,
                 }
             time.sleep(0.1)
+        logger.info("Worker 启动中：launcher_pid=%s", process.pid)
+        self._append_worker_log(f"Worker 启动中：launcher_pid={process.pid}")
         return {"status": "starting", "pid": None, "launcher_pid": process.pid}
 
     def stop_worker(self) -> dict:
         pid = self._worker_pid()
         if not pid or not self._pid_alive(pid):
             self._pid_path.unlink(missing_ok=True)
+            logger.info("Worker 停止请求忽略：没有运行进程")
+            self._append_worker_log("Worker 停止请求忽略：没有运行进程")
             return {"status": "stopped", "pid": None}
+        logger.info("Worker 停止请求：pid=%s", pid)
+        self._append_worker_log(f"Worker 停止请求：pid={pid}")
         os.kill(pid, signal.SIGTERM)
         self._pid_path.unlink(missing_ok=True)
         return {"status": "stopping", "pid": pid}
 
     def restart_worker(self) -> dict:
+        logger.info("Worker 重启请求")
+        self._append_worker_log("Worker 重启请求")
         self.stop_worker()
         return self.start_worker()
+
+    def _append_worker_log(self, message: str) -> None:
+        if not self.settings:
+            return
+        self.logger_service.append_line(
+            self._log_path,
+            f"{datetime.now(timezone.utc).isoformat()} INFO {message}",
+        )

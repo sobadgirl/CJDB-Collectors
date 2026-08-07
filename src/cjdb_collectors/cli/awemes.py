@@ -28,7 +28,7 @@ def add(
         "--type",
         help="小红书可指定 video、image；默认自动识别。",
     ),
-    group: list[str] = typer.Option([], "--group"),
+    project: list[str] = typer.Option([], "--project"),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     return cli_result(
@@ -36,7 +36,7 @@ def add(
             url=url,
             platform=platform,
             content_type=content_type,
-            group_ids=group,
+            project_ids=project,
         ),
         view="aweme",
     )
@@ -45,13 +45,13 @@ def add(
 @app.command("list")
 @output_command
 def list_items(
-    group: list[str] = typer.Option([], "--group"),
+    project: list[str] = typer.Option([], "--project"),
     page: int = typer.Option(1, "--page", min=1),
     size: int = typer.Option(50, "--size", min=1, max=500),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     items = get_services().awemes.list(
-        group_ids=group,
+        project_ids=project,
         limit=size,
         offset=page_offset(page, size),
     )
@@ -62,14 +62,14 @@ def list_items(
 @output_command
 def search(
     keyword: str,
-    group: list[str] = typer.Option([], "--group"),
+    project: list[str] = typer.Option([], "--project"),
     page: int = typer.Option(1, "--page", min=1),
     size: int = typer.Option(50, "--size", min=1, max=500),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     items = get_services().awemes.search(
         keyword,
-        group_ids=group,
+        project_ids=project,
         limit=size,
         offset=page_offset(page, size),
     )
@@ -198,14 +198,14 @@ def transcription(
     )
 
 
-@app.command("set-groups")
+@app.command("set-projects")
 @output_command
-def set_groups(
+def set_projects(
     aweme_id: str,
-    group: list[str] = typer.Option(..., "--group"),
+    project: list[str] = typer.Option(..., "--project"),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     return cli_result(
-        get_services().awemes.set_groups(aweme_id, group),
+        get_services().awemes.set_projects(aweme_id, project),
         view="aweme",
     )

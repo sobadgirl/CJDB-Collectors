@@ -21,9 +21,16 @@ class Pagination(ApiModel):
 
 
 class AccountCreate(ApiModel):
-    url: str = Field(min_length=1)
+    url: str | None = Field(default=None, min_length=1)
     platform: Platform
-    group_ids: list[str] = Field(default_factory=list)
+    platform_account_id: str | None = Field(default=None, min_length=1)
+    project_ids: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def url_or_platform_account_id_required(self) -> "AccountCreate":
+        if not self.url and not self.platform_account_id:
+            raise ValueError("url or platform_account_id is required")
+        return self
 
 
 class AccountUpdate(ApiModel):
@@ -32,13 +39,21 @@ class AccountUpdate(ApiModel):
 
 
 class AwemeCreate(ApiModel):
-    url: str = Field(min_length=1)
+    url: str | None = Field(default=None, min_length=1)
     platform: Platform
+    platform_aweme_id: str | None = Field(default=None, min_length=1)
     content_type: Literal["unknown", "video", "image", "article", "live"] | None = None
-    group_ids: list[str] = Field(default_factory=list)
+    project_ids: list[str] = Field(default_factory=list)
     download_video: bool = False
     collect_comments: bool = False
+    comment_max_count: int | None = Field(default=None, ge=1, le=5000)
     transcribe: bool = False
+
+    @model_validator(mode="after")
+    def url_or_platform_aweme_id_required(self) -> "AwemeCreate":
+        if not self.url and not self.platform_aweme_id:
+            raise ValueError("url or platform_aweme_id is required")
+        return self
 
 
 class AwemeUpdate(ApiModel):
@@ -48,20 +63,20 @@ class AwemeUpdate(ApiModel):
     video_path: str | None = None
     cover_path: str | None = None
     photos: list[str] | None = None
-    photo_paths: list[str] | None = None
+    photo_paths: list[str | dict[str, str | None]] | None = None
     platform: Platform | None = None
     platform_aweme_id: str | None = None
     content_type: Literal["unknown", "video", "image", "article", "live"] | None = None
 
 
-class GroupCreate(ApiModel):
+class ProjectCreate(ApiModel):
     name: str = Field(min_length=1, max_length=120)
     description: str | None = None
     color: str | None = None
     sort_order: int = 0
 
 
-class GroupUpdate(ApiModel):
+class ProjectUpdate(ApiModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     description: str | None = None
     color: str | None = None
@@ -73,47 +88,9 @@ class IdList(ApiModel):
     ids: list[str] = Field(default_factory=list)
 
 
-class GroupMembersUpdate(ApiModel):
+class ProjectMembersUpdate(ApiModel):
     aweme_ids: list[str] | None = None
     account_ids: list[str] | None = None
-
-
-class DataStorerCreate(ApiModel):
-    name: str = Field(min_length=1, max_length=120)
-    type: str = "notion"
-    secret_ref: str
-    connection_config: dict[str, Any] = Field(default_factory=dict)
-    container_config: dict[str, Any] = Field(default_factory=dict)
-    field_mapping: dict[str, Any] = Field(default_factory=dict)
-    attachment_policy: dict[str, Any] = Field(default_factory=dict)
-    conflict_policy: str = "upsert"
-
-
-class DataStorerUpdate(ApiModel):
-    name: str | None = None
-    secret_ref: str | None = None
-    connection_config: dict[str, Any] | None = None
-    container_config: dict[str, Any] | None = None
-    field_mapping: dict[str, Any] | None = None
-    attachment_policy: dict[str, Any] | None = None
-    conflict_policy: str | None = None
-    status: Literal["active", "needs_attention", "disabled"] | None = None
-
-
-class StoreCreate(ApiModel):
-    name: str = Field(min_length=1, max_length=120)
-    type: str = Field(min_length=1)
-    values: dict[str, Any] = Field(default_factory=dict)
-    default: bool = False
-
-
-class StoreUpdate(ApiModel):
-    name: str | None = Field(default=None, min_length=1, max_length=120)
-    status: Literal["active", "needs_attention", "disabled"] | None = None
-
-
-class StoreSetup(ApiModel):
-    values: dict[str, Any] = Field(default_factory=dict)
 
 
 class TranscriptionCreate(ApiModel):
@@ -137,16 +114,16 @@ class ConfigValue(ApiModel):
     value: Any
 
 
-class ConfigSet(ApiModel):
+class SettingsSet(ApiModel):
     key: str = Field(min_length=1)
     value: Any
 
 
-class ConfigGetMany(ApiModel):
+class SettingsGetMany(ApiModel):
     keys: list[str] = Field(min_length=1)
 
 
-class ConfigPatch(ApiModel):
+class SettingsPatch(ApiModel):
     values: dict[str, Any] = Field(min_length=1)
 
 
@@ -156,4 +133,20 @@ class ProviderSetup(ApiModel):
 
 class ProviderSelection(ApiModel):
     type: str = Field(min_length=1)
+    namespace: str | None = Field(default=None, min_length=1)
+    provider_id: str | None = None
+    project_id: str | None = Field(default=None, min_length=1)
+    selected: bool = True
+
+
+class ProviderCreate(ApiModel):
     namespace: str = Field(min_length=1)
+    name: str = Field(min_length=1, max_length=255)
+    project_id: str = Field(min_length=1)
+    provider_type: str | None = Field(default=None, min_length=1)
+    values: dict[str, Any] = Field(default_factory=dict)
+
+
+class ProviderUpdate(ApiModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    status: str | None = Field(default=None, min_length=1, max_length=64)

@@ -44,11 +44,12 @@ TRANSCRIPTION_LIST_FIELDS = (
     "video_path",
     "status",
     "progress",
+    "duration_seconds",
     "attempt_count",
     "error_message",
     "updated_at",
 )
-GROUP_LIST_FIELDS = (
+PROJECT_LIST_FIELDS = (
     "id",
     "name",
     "description",
@@ -63,7 +64,6 @@ STORE_LIST_FIELDS = (
     "type",
     "status",
     "default",
-    "conflict_policy",
     "last_validated_at",
     "validation_error",
     "updated_at",
@@ -75,8 +75,7 @@ SYNC_LIST_FIELDS = (
     "data_storer_id",
     "status",
     "enabled",
-    "remote_record_id",
-    "remote_url",
+    "success_payload_json",
     "last_synced_at",
     "attempt_count",
     "error_message",
@@ -154,11 +153,11 @@ def transcription_list_result(
     )
 
 
-def group_list_result(value: Any) -> CLIResult:
-    items = _summaries(value, GROUP_LIST_FIELDS)
+def project_list_result(value: Any) -> CLIResult:
+    items = _summaries(value, PROJECT_LIST_FIELDS)
     return cli_result(
         value,
-        view="group_list",
+        view="project_list",
         json_value={"items": items, "count": len(items)},
     )
 
@@ -209,7 +208,7 @@ def sync_list_result(value: Any) -> CLIResult:
 __all__ = [
     "account_list_result",
     "aweme_list_result",
-    "group_list_result",
+    "project_list_result",
     "store_list_result",
     "store_type_list_result",
     "sync_list_result",

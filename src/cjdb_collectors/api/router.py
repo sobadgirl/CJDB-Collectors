@@ -14,7 +14,10 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Query, Response, status
 
+from cjdb_collectors.domains.data_provider import ProviderStatus
+from cjdb_collectors.domains.provider import ProviderType
 from cjdb_collectors.exceptions import InvalidOperationError
+from cjdb_collectors.services.logger import LogType
 
 from .dependencies import get_services
 from .schemas import (
@@ -22,20 +25,17 @@ from .schemas import (
     AccountUpdate,
     AwemeCreate,
     AwemeUpdate,
-    ConfigGetMany,
-    ConfigPatch,
-    ConfigSet,
-    DataStorerCreate,
-    DataStorerUpdate,
-    GroupCreate,
-    GroupMembersUpdate,
-    GroupUpdate,
+    SettingsGetMany,
+    SettingsPatch,
+    SettingsSet,
     IdList,
+    ProjectCreate,
+    ProjectMembersUpdate,
+    ProjectUpdate,
     ProviderSelection,
+    ProviderCreate,
     ProviderSetup,
-    StoreCreate,
-    StoreSetup,
-    StoreUpdate,
+    ProviderUpdate,
     TranscriptionCreate,
 )
 
@@ -50,7 +50,7 @@ def _cjdb_command(*arguments: str) -> list[str]:
 def _cjdb_environment(services: Any) -> dict[str, str]:
     return {
         **os.environ,
-        "CJDB_CONFIG": str(services.settings.config_path),
+        "CJDB_CONFIG": str(services.runtime_settings.config_path),
         "CJDB_PROVIDER_SETUP_OUTPUT_REDIRECTED": "1",
         "PYTHONUNBUFFERED": "1",
     }
@@ -77,86 +77,23 @@ def _filtered_page(
     return values[offset : offset + limit if limit is not None else None]
 
 
-def _store_view(
+def _assert_provider_supports_type(
     services: Any,
-    item: Any,
-    *,
-    default_ids: set | None = None,
-) -> dict[str, Any]:
-    return {
-        **item.model_dump(mode="json"),
-        "default": (
-            item.id in default_ids
-            if default_ids is not None
-            else services.stores.is_default(item.id)
-        ),
-    }
-
-
-def _read_log_page(
-    path: Path,
-    *,
-    before: int | None,
-    limit: int,
-) -> dict[str, Any]:
-    file_size = path.stat().st_size
-    end = min(before if before is not None else file_size, file_size)
-    if end <= 0:
-        return {
-            "lines": [],
-            "start": 0,
-            "end": 0,
-            "total": file_size,
-            "has_more": False,
-        }
-
-    chunk_size = 64 * 1024
-    cursor = end
-    newline_count = 0
-    chunks: list[bytes] = []
-    with path.open("rb") as handle:
-        while cursor > 0 and newline_count <= limit:
-            size = min(chunk_size, cursor)
-            cursor -= size
-            handle.seek(cursor)
-            chunk = handle.read(size)
-            chunks.append(chunk)
-            newline_count += chunk.count(b"\n")
-
-        data = b"".join(reversed(chunks))
-        base_offset = cursor
-        if base_offset > 0:
-            handle.seek(base_offset - 1)
-            starts_on_boundary = handle.read(1) == b"\n"
-            if not starts_on_boundary:
-                first_newline = data.find(b"\n")
-                if first_newline >= 0:
-                    base_offset += first_newline + 1
-                    data = data[first_newline + 1 :]
-
-    entries: list[dict[str, Any]] = []
-    offset = base_offset
-    for raw_line in data.splitlines(keepends=True):
-        entries.append(
-            {
-                "index": offset,
-                "text": raw_line.rstrip(b"\r\n").decode(
-                    "utf-8",
-                    errors="replace",
-                ),
-            }
+    provider_id: str,
+    provider_type: ProviderType,
+) -> None:
+    record = services.stores.get(provider_id)
+    if provider_type.value.startswith("store_"):
+        provider_class = services.store_providers.registry._registry.get(
+            record.namespace
         )
-        offset += len(raw_line)
-    entries = entries[-limit:]
-    start = entries[0]["index"] if entries else end
-    return {
-        "lines": entries,
-        "start": start,
-        "end": end,
-        "total": file_size,
-        "has_more": start > 0,
-    }
-
+    else:
+        provider_class = services.providers.registry.get(record.namespace)
+    supported = {ProviderType(value) for value in provider_class.supported_types}
+    if provider_type not in supported:
+        raise InvalidOperationError(
+            f"provider {record.namespace} does not support {provider_type.value}"
+        )
 
 
 @api_router.get("/health/live", tags=["health"])
@@ -178,11 +115,318 @@ def services_health(services: Services) -> Any:
 def providers(
     services: Services,
     type: str | None = Query(default=None),  # noqa: A002
+    project_id: str | None = Query(default=None),
+    importable: bool = Query(default=False),
 ) -> Any:
+    if project_id is not None:
+        if not type:
+            raise InvalidOperationError("type is required with project_id")
+        if type.startswith("store_"):
+            class_items = services.store_providers.list([type])
+            namespaces = {str(item["type"]) for item in class_items}
+        else:
+            class_items = services.providers.providers(type, include_status=False)
+            namespaces = {str(item["namespace"]) for item in class_items}
+        metadata = {
+            str(item.get("namespace", item.get("type"))): item
+            for item in class_items
+        }
+        records = services.projects.providers(
+            project_id=None if importable else project_id,
+            exclude_project_id=project_id if importable else None,
+            namespaces=namespaces,
+        )
+        project_names = {
+            str(project.id): project.name for project in services.projects.list()
+        }
+        selected_type = ProviderType(type)
+        selected_ids = (
+            []
+            if importable
+            else [
+                str(value)
+                for value in services.projects.selected_provider_ids(
+                    project_id,
+                    selected_type,
+                )
+            ]
+        )
+        def setup_payload_for(record: Any) -> dict[str, Any]:
+            raw_payload = dict(record.setup_payload_json or {})
+            if type.startswith("store_"):
+                provider = services.store_providers.registry.get(
+                    record.namespace,
+                    raw_payload,
+                )
+                return provider.clean_params_value(
+                    provider.parameters,
+                    raw_payload,
+                    current=raw_payload,
+                )
+            provider_class = services.providers.registry.get(record.namespace)
+            return provider_class.clean_params_value(
+                provider_class.parameters,
+                raw_payload,
+                current=raw_payload,
+            )
+
+        return {
+            "type": type,
+            "project_id": project_id,
+            "importable": importable,
+            "selection_mode": selected_type.selection_mode.value,
+            "selected": (
+                selected_ids
+                if selected_type.selection_mode.value == "multiple"
+                else (selected_ids[0] if selected_ids else None)
+            ),
+            "provider_classes": list(metadata.values()),
+            "providers": [
+                {
+                    **metadata[record.namespace],
+                    **record.model_dump(mode="json"),
+                    "provider_id": str(record.id),
+                    "setup_payload": setup_payload_for(record),
+                    "projects": [
+                        {
+                            "id": str(value),
+                            "name": project_names.get(str(value), str(value)),
+                        }
+                        for value in services.projects.provider_project_ids(record.id)
+                    ],
+                }
+                for record in records
+            ],
+        }
     return services.providers.catalog(
         type,
-        include_configuration=True,
+        include_setup_payload=True,
     )
+
+
+@api_router.post(
+    "/providers",
+    status_code=status.HTTP_201_CREATED,
+    tags=["providers"],
+)
+def create_provider(payload: ProviderCreate, services: Services) -> Any:
+    setup_result = None
+    if payload.namespace in services.store_providers.registry._provider_classes:
+        item, setup_result = services.stores.create_with_setup_result(
+            payload.namespace,
+            name=payload.name,
+            setup_values=payload.values,
+            project_id=payload.project_id,
+        )
+    else:
+        item, setup_result = services.providers.create_instance_with_setup_result(
+            payload.namespace,
+            name=payload.name,
+            project_id=payload.project_id,
+            values=payload.values,
+        )
+    if payload.provider_type:
+        provider_type = ProviderType(payload.provider_type)
+        supported = {
+            str(value)
+            for value in (
+                services.store_providers.registry.get(
+                    item.namespace,
+                    item.setup_payload_json,
+                ).supported_types
+                if provider_type.value.startswith("store_")
+                else services.providers.registry.get(item.namespace).supported_types
+            )
+        }
+        if provider_type.value not in supported:
+            raise InvalidOperationError(
+                f"provider {item.namespace} does not support {provider_type.value}"
+            )
+        services.projects.select_provider(
+            payload.project_id,
+            provider_type,
+            item.id,
+        )
+    return {
+        **item.model_dump(mode="json"),
+        "provider_id": str(item.id),
+        "projects": [payload.project_id],
+        "setup_result": setup_result,
+    }
+
+
+@api_router.patch("/providers/instances/{provider_id}", tags=["providers"])
+def update_provider(
+    provider_id: str,
+    payload: ProviderUpdate,
+    services: Services,
+) -> Any:
+    return services.stores.update(
+        provider_id,
+        **payload.model_dump(exclude_unset=True),
+    )
+
+
+@api_router.post(
+    "/providers/instances/{provider_id}/setup",
+    tags=["providers"],
+)
+def setup_provider_instance(
+    provider_id: str,
+    payload: ProviderSetup,
+    services: Services,
+) -> Any:
+    item = services.stores.get(provider_id)
+    if item.namespace in services.store_providers.registry._provider_classes:
+        return services.stores.setup(provider_id, payload.values)
+    return services.providers.setup_instance(provider_id, payload.values)
+
+
+@api_router.get(
+    "/providers/instances/{provider_id}/status",
+    tags=["providers"],
+)
+def provider_instance_status(provider_id: str, services: Services) -> Any:
+    item = services.stores.get(provider_id)
+    if item.namespace in services.store_providers.registry._provider_classes:
+        return services.stores.status(provider_id)
+    return services.providers.status_instance(provider_id)
+
+
+@api_router.post(
+    "/providers/instances/{provider_id}/status/refresh",
+    tags=["providers"],
+)
+def refresh_provider_instance_status(provider_id: str, services: Services) -> Any:
+    item = services.stores.get(provider_id)
+    if item.namespace in services.store_providers.registry._provider_classes:
+        return services.stores.refresh_status(provider_id)
+    return services.providers.status_instance(provider_id, refresh=True)
+
+
+@api_router.delete(
+    "/providers/instances/{provider_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["providers"],
+)
+def delete_provider_instance(provider_id: str, services: Services) -> Response:
+    services.stores.delete(provider_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@api_router.post(
+    "/projects/{project_id}/providers/{provider_id}",
+    tags=["projects", "providers"],
+)
+def bind_project_provider(
+    project_id: str,
+    provider_id: str,
+    services: Services,
+    type: str | None = Query(default=None),  # noqa: A002
+) -> Any:
+    services.projects.bind_provider(project_id, provider_id)
+    selected_ids: list[str] = []
+    if type:
+        selected_type = ProviderType(type)
+        _assert_provider_supports_type(services, provider_id, selected_type)
+        selected_ids = [
+            str(value)
+            for value in services.projects.select_provider(
+                project_id,
+                selected_type,
+                provider_id,
+            )
+        ]
+    return {
+        "project_id": project_id,
+        "provider_id": provider_id,
+        "provider_type": type,
+        "selected": selected_ids,
+    }
+
+
+@api_router.get(
+    "/projects/{project_id}/providers",
+    tags=["projects", "providers"],
+)
+def list_project_providers(
+    project_id: str,
+    services: Services,
+    type: str | None = Query(default=None),  # noqa: A002
+) -> Any:
+    namespaces: set[str] | None = None
+    if type:
+        if type.startswith("store_"):
+            namespaces = {
+                str(item["type"])
+                for item in services.store_providers.list([type])
+            }
+        else:
+            namespaces = {
+                str(item["namespace"])
+                for item in services.providers.providers(
+                    type,
+                    include_status=False,
+                )
+            }
+    records = services.projects.providers(
+        project_id=project_id,
+        namespaces=namespaces,
+    )
+    return [
+        {
+            **record.model_dump(mode="json"),
+            "provider_id": str(record.id),
+        }
+        for record in records
+    ]
+
+
+@api_router.get(
+    "/projects/{project_id}/providers/importable",
+    tags=["projects", "providers"],
+)
+def importable_project_providers(
+    project_id: str,
+    services: Services,
+    subject_type: str = Query(pattern="^(aweme|account|video_transcription)$"),
+) -> Any:
+    namespaces = services.stores._namespaces(subject_type)
+    records = services.projects.providers(
+        exclude_project_id=project_id,
+        namespaces=namespaces,
+    )
+    projects = {str(item.id): item.name for item in services.projects.list()}
+    return {
+        "providers": [
+            {
+                **record.model_dump(mode="json"),
+                "provider_id": str(record.id),
+                "projects": [
+                    {
+                        "id": str(value),
+                        "name": projects.get(str(value), str(value)),
+                    }
+                    for value in services.projects.provider_project_ids(record.id)
+                ],
+            }
+            for record in records
+        ]
+    }
+
+
+@api_router.delete(
+    "/projects/{project_id}/providers/{provider_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["projects", "providers"],
+)
+def unbind_project_provider(
+    project_id: str,
+    provider_id: str,
+    services: Services,
+) -> Response:
+    services.projects.unbind_provider(project_id, provider_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @api_router.get("/providers/services", tags=["providers"])
@@ -195,13 +439,101 @@ def provider_service_status(services: Services) -> Any:
     return services.providers.service_status()
 
 
+@api_router.post("/providers/status/refresh", tags=["providers"])
+def refresh_provider_service_status(services: Services) -> Any:
+    result = subprocess.run(
+        _cjdb_command("provider", "status", "--refresh", "--format", "json"),
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+        cwd=str(services.runtime_settings.config_path.parent),
+        env=_cjdb_environment(services),
+        check=False,
+    )
+    if result.returncode != 0:
+        message = result.stderr.strip() or result.stdout.strip()
+        raise InvalidOperationError(message or "Provider 状态刷新失败")
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise InvalidOperationError("Provider 状态刷新命令未返回有效结果") from exc
+
+
 @api_router.get("/providers/{provider_type}/status", tags=["providers"])
 def provider_status(provider_type: str, services: Services) -> Any:
     return services.providers.status(provider_type)
 
 
+@api_router.post("/providers/{provider_type}/status/refresh", tags=["providers"])
+def refresh_provider_status(provider_type: str, services: Services) -> Any:
+    result = subprocess.run(
+        _cjdb_command(
+            "provider",
+            "status",
+            provider_type,
+            "--refresh",
+            "--format",
+            "json",
+        ),
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+        cwd=str(services.runtime_settings.config_path.parent),
+        env=_cjdb_environment(services),
+        check=False,
+    )
+    if result.returncode != 0:
+        message = result.stderr.strip() or result.stdout.strip()
+        raise InvalidOperationError(message or "Provider 状态刷新失败")
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise InvalidOperationError("Provider 状态刷新命令未返回有效结果") from exc
+
+
 @api_router.patch("/providers/selection", tags=["providers"])
 def select_provider(payload: ProviderSelection, services: Services) -> Any:
+    if payload.project_id and not payload.provider_id and not payload.selected:
+        selected_type = ProviderType(payload.type)
+        selected_ids = services.projects.unselect_provider_type(
+            payload.project_id,
+            selected_type,
+        )
+        return {
+            "type": payload.type,
+            "project_id": payload.project_id,
+            "provider_id": None,
+            "selected": [str(value) for value in selected_ids],
+        }
+    if payload.project_id and payload.provider_id:
+        selected_type = ProviderType(payload.type)
+        _assert_provider_supports_type(
+            services,
+            payload.provider_id,
+            selected_type,
+        )
+        services.projects.bind_provider(payload.project_id, payload.provider_id)
+        selected_ids = (
+            services.projects.select_provider(
+                payload.project_id,
+                selected_type,
+                payload.provider_id,
+            )
+            if payload.selected
+            else services.projects.unselect_provider(
+                payload.project_id,
+                selected_type,
+                payload.provider_id,
+            )
+        )
+        return {
+            "type": payload.type,
+            "project_id": payload.project_id,
+            "provider_id": payload.provider_id,
+            "selected": [str(value) for value in selected_ids],
+        }
+    if not payload.namespace:
+        raise InvalidOperationError("namespace or provider_id is required")
     return services.providers.select(payload.type, payload.namespace)
 
 
@@ -212,7 +544,8 @@ def provider_setup(
     services: Services,
 ) -> Any:
     namespace = services.providers.selected_namespace(provider_type)
-    setup_dir = Path(services.settings.app.data_dir) / "provider-setup"
+    services.providers.assert_provider_config_mutable(namespace)
+    setup_dir = Path(services.runtime_settings.app.data_dir) / "provider-setup"
     setup_dir.mkdir(parents=True, exist_ok=True)
     values_path = setup_dir / f"{namespace}-{uuid4().hex}.json"
     values_path.write_text(
@@ -221,10 +554,9 @@ def provider_setup(
     )
     values_path.chmod(0o600)
 
-    log_path = Path(services.settings.app.logs_dir) / f"provider-{namespace}.log"
-    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path = services.logger.get_log_path(LogType.PROVIDER_SETUP, namespace)
     try:
-        with log_path.open("ab") as log:
+        with services.logger.open_binary_append(log_path) as log:
             process = subprocess.Popen(
                 _cjdb_command(
                     "provider",
@@ -239,7 +571,7 @@ def provider_setup(
                 stdin=subprocess.DEVNULL,
                 stdout=log,
                 stderr=subprocess.STDOUT,
-                cwd=str(services.settings.config_path.parent),
+                cwd=str(services.runtime_settings.config_path.parent),
                 env=_cjdb_environment(services),
                 start_new_session=True,
                 close_fds=True,
@@ -247,6 +579,14 @@ def provider_setup(
     except Exception:
         values_path.unlink(missing_ok=True)
         raise
+    services.providers.set_provider_status(
+        namespace,
+        ProviderStatus(
+            status="setting_up",
+            message="Provider setup 正在运行",
+            setup_pid=process.pid,
+        ),
+    )
 
     return {
         "status": "starting",
@@ -269,7 +609,7 @@ def stop_provider_setup(provider_type: str, services: Services) -> Any:
         stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
-        cwd=str(services.settings.config_path.parent),
+        cwd=str(services.runtime_settings.config_path.parent),
         env=_cjdb_environment(services),
         check=False,
     )
@@ -286,6 +626,7 @@ def stop_provider_setup(provider_type: str, services: Services) -> Any:
 def provider_logs(
     provider_type: str,
     services: Services,
+    scope: str = Query(default="runtime", pattern="^(runtime|setup)$"),
     before: int | None = Query(default=None, ge=0),
     limit: int = Query(default=200, ge=1, le=1000),
 ) -> Any:
@@ -314,31 +655,54 @@ def provider_logs(
         }
 
     namespace = str(provider["namespace"])
-    log_path = services.settings.app.logs_dir / f"provider-{namespace}.log"
-    if not log_path.exists():
-        return {
-            "type": provider_type,
-            "provider": {
-                "name": provider["name"],
-                "namespace": namespace,
-            },
-            "path": str(log_path),
-            "lines": [],
-            "start": 0,
-            "end": 0,
-            "total": 0,
-            "has_more": False,
-        }
-
+    log_type = (
+        LogType.PROVIDER_SETUP
+        if scope == "setup"
+        else LogType.PROVIDER_RUNTIME
+    )
     return {
         "type": provider_type,
+        "scope": scope,
         "provider": {
             "name": provider["name"],
             "namespace": namespace,
         },
-        "path": str(log_path),
-        **_read_log_page(
-            log_path,
+        **services.logger.read_page(
+            log_type,
+            namespace,
+            before=before,
+            limit=limit,
+        ),
+    }
+
+
+@api_router.get("/providers/instances/{provider_id}/logs", tags=["providers"])
+def provider_instance_logs(
+    provider_id: str,
+    services: Services,
+    scope: str = Query(default="runtime", pattern="^(runtime|setup)$"),
+    before: int | None = Query(default=None, ge=0),
+    limit: int = Query(default=200, ge=1, le=1000),
+) -> Any:
+    provider = services.stores.get(provider_id)
+    base = {
+        "scope": scope,
+        "provider": {
+            "id": str(provider.id),
+            "name": provider.name,
+            "namespace": provider.namespace,
+        },
+    }
+    log_type = (
+        LogType.PROVIDER_SETUP
+        if scope == "setup"
+        else LogType.PROVIDER_RUNTIME
+    )
+    return {
+        **base,
+        **services.logger.read_page(
+            log_type,
+            provider,
             before=before,
             limit=limit,
         ),
@@ -348,6 +712,27 @@ def provider_logs(
 @api_router.get("/worker-tasks/health", tags=["worker-tasks"])
 def worker_health(services: Services) -> Any:
     return services.worker_tasks.health()
+
+
+@api_router.get("/worker-tasks/logs", tags=["worker-tasks"])
+def worker_logs(
+    services: Services,
+    scope: str = Query(default="worker", pattern="^(worker|tasks)$"),
+    task_type: str | None = Query(default=None),
+    before: int | None = Query(default=None, ge=0),
+    limit: int = Query(default=200, ge=1, le=1000),
+) -> Any:
+    log_type = LogType.WORKER_TASKS if scope == "tasks" else LogType.WORKER
+    return {
+        "scope": scope,
+        "task_type": task_type,
+        **services.logger.read_page(
+            log_type,
+            task_type if log_type == LogType.WORKER_TASKS else None,
+            before=before,
+            limit=limit,
+        ),
+    }
 
 
 @api_router.post("/worker-tasks/start", tags=["worker-tasks"])
@@ -365,57 +750,57 @@ def restart_worker(services: Services) -> Any:
     return services.worker_tasks.restart_worker()
 
 
-@api_router.get("/config", tags=["config"])
-def show_config(services: Services) -> Any:
-    return services.config.show()
-
-
 @api_router.get("/settings", tags=["settings"])
-def show_settings(services: Services) -> Any:
-    return services.config.business_settings().show()
+def show_config(services: Services) -> Any:
+    return services.settings.show()
+
+
+@api_router.get("/settings/business", tags=["settings"])
+def show_business_settings(services: Services) -> Any:
+    return services.settings.business_settings().show()
+
+
+@api_router.get("/settings/business/value", tags=["settings"])
+def get_business_settings_value(key: str, services: Services) -> Any:
+    config = services.settings.business_settings()
+    return {"key": key, "value": getattr(config, key)}
+
+
+@api_router.patch("/settings/business", tags=["settings"])
+def patch_business_settings(payload: SettingsPatch, services: Services) -> Any:
+    return services.settings.business_settings().patch(payload.values)
 
 
 @api_router.get("/settings/value", tags=["settings"])
-def get_setting_value(key: str, services: Services) -> Any:
-    settings = services.config.business_settings()
-    return {"key": key, "value": getattr(settings, key)}
+def get_config_value(key: str, services: Services) -> Any:
+    return {"key": key, "value": services.settings.get(key)}
+
+
+@api_router.post("/settings/values", tags=["settings"])
+def get_config_values(payload: SettingsGetMany, services: Services) -> Any:
+    return services.settings.get_many(payload.keys)
 
 
 @api_router.patch("/settings", tags=["settings"])
-def patch_settings(payload: ConfigPatch, services: Services) -> Any:
-    return services.config.business_settings().patch(payload.values)
+def set_config(payload: SettingsSet, services: Services) -> Any:
+    return services.settings.set(payload.key, payload.value)
 
 
-@api_router.get("/config/value", tags=["config"])
-def get_config_value(key: str, services: Services) -> Any:
-    return {"key": key, "value": services.config.get(key)}
-
-
-@api_router.post("/config/values", tags=["config"])
-def get_config_values(payload: ConfigGetMany, services: Services) -> Any:
-    return services.config.get_many(payload.keys)
-
-
-@api_router.patch("/config", tags=["config"])
-def set_config(payload: ConfigSet, services: Services) -> Any:
-    return services.config.set(payload.key, payload.value)
-
-
-@api_router.patch("/config/values", tags=["config"])
-def patch_config(payload: ConfigPatch, services: Services) -> Any:
-    return services.config.patch(payload.values)
+@api_router.patch("/settings/values", tags=["settings"])
+def patch_config(payload: SettingsPatch, services: Services) -> Any:
+    return services.settings.patch(payload.values)
 
 
 @api_router.get("/accounts", tags=["accounts"])
 def list_accounts(
     services: Services,
-    group_id: list[str] = Query(default=[]),
+    project_id: list[str] = Query(default=[]),
     status_filter: str | None = Query(default=None, alias="status"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ) -> Any:
     return _filtered_page(
-        services.accounts.list(group_ids=group_id),
+        services.accounts.list(project_ids=project_id),
         status_value=status_filter,
         limit=limit,
         offset=offset,
@@ -456,9 +841,9 @@ def collect_account(account_id: str, services: Services) -> Any:
     return services.accounts.request_collection(account_id)
 
 
-@api_router.put("/accounts/{account_id}/groups", tags=["accounts"])
-def set_account_groups(account_id: str, payload: IdList, services: Services) -> Any:
-    return services.accounts.set_groups(account_id, payload.ids)
+@api_router.put("/accounts/{account_id}/projects", tags=["accounts", "projects"])
+def set_account_projects(account_id: str, payload: IdList, services: Services) -> Any:
+    return services.accounts.set_projects(account_id, payload.ids)
 
 
 @api_router.get("/accounts/{account_id}/syncs", tags=["accounts", "sync"])
@@ -469,13 +854,13 @@ def account_syncs(account_id: str, services: Services) -> Any:
 @api_router.get("/awemes", tags=["awemes"])
 def list_awemes(
     services: Services,
-    group_id: list[str] = Query(default=[]),
+    project_id: list[str] = Query(default=[]),
     status_filter: str | None = Query(default=None, alias="status"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ) -> Any:
     return _filtered_page(
-        services.awemes.list(group_ids=group_id),
+        services.awemes.list(project_ids=project_id),
         status_value=status_filter,
         limit=limit,
         offset=offset,
@@ -521,7 +906,8 @@ def fetch_aweme(aweme_id: str, services: Services) -> Any:
 
 @api_router.post("/awemes/{aweme_id}/comments/fetch", tags=["awemes"])
 def fetch_aweme_comments(aweme_id: str, services: Services) -> Any:
-    return services.awemes.fetch_comments(services.awemes.get(aweme_id))
+    # V1.0 发布隐藏：评论采集接口保留兼容，不触发真实评论抓取。
+    return services.awemes.get(aweme_id)
 
 
 @api_router.post("/awemes/{aweme_id}/video/download", tags=["awemes"])
@@ -529,9 +915,9 @@ def download_aweme_video(aweme_id: str, services: Services) -> Any:
     return services.awemes.download_video(services.awemes.get(aweme_id))
 
 
-@api_router.put("/awemes/{aweme_id}/groups", tags=["awemes"])
-def set_aweme_groups(aweme_id: str, payload: IdList, services: Services) -> Any:
-    return services.awemes.set_groups(aweme_id, payload.ids)
+@api_router.put("/awemes/{aweme_id}/projects", tags=["awemes", "projects"])
+def set_aweme_projects(aweme_id: str, payload: IdList, services: Services) -> Any:
+    return services.awemes.set_projects(aweme_id, payload.ids)
 
 
 @api_router.get("/awemes/{aweme_id}/syncs", tags=["awemes", "sync"])
@@ -539,9 +925,8 @@ def aweme_syncs(aweme_id: str, services: Services) -> Any:
     return services.sync.list(aweme_id=aweme_id)
 
 
-@api_router.get("/groups", tags=["groups"])
-def list_groups(services: Services, include_disabled: bool = False) -> Any:
-    values = services.groups.list()
+def _list_projects(services: Services, include_disabled: bool = False) -> Any:
+    values = services.projects.list()
     if include_disabled:
         return values
     return [
@@ -549,210 +934,43 @@ def list_groups(services: Services, include_disabled: bool = False) -> Any:
     ]
 
 
-@api_router.post("/groups", status_code=status.HTTP_201_CREATED, tags=["groups"])
-def create_group(payload: GroupCreate, services: Services) -> Any:
-    return services.groups.create(**payload.model_dump())
+@api_router.get("/projects", tags=["projects"])
+def list_projects(services: Services, include_disabled: bool = False) -> Any:
+    return _list_projects(services, include_disabled)
 
 
-@api_router.get("/groups/{group_id}", tags=["groups"])
-def get_group(group_id: str, services: Services) -> Any:
-    return services.groups.get(group_id)
+@api_router.post("/projects", status_code=status.HTTP_201_CREATED, tags=["projects"])
+def create_project(payload: ProjectCreate, services: Services) -> Any:
+    return services.projects.create(**payload.model_dump())
 
 
-@api_router.patch("/groups/{group_id}", tags=["groups"])
-def update_group(group_id: str, payload: GroupUpdate, services: Services) -> Any:
-    return services.groups.update(group_id, **payload.model_dump(exclude_unset=True))
+@api_router.get("/projects/{project_id}", tags=["projects"])
+def get_project(project_id: str, services: Services) -> Any:
+    return services.projects.get(project_id)
+
+
+@api_router.patch("/projects/{project_id}", tags=["projects"])
+def update_project(project_id: str, payload: ProjectUpdate, services: Services) -> Any:
+    return services.projects.update(project_id, **payload.model_dump(exclude_unset=True))
 
 
 @api_router.delete(
-    "/groups/{group_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["groups"]
+    "/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["projects"]
 )
-def delete_group(group_id: str, services: Services) -> Response:
-    services.groups.delete(group_id)
+def delete_project(project_id: str, services: Services) -> Response:
+    services.projects.delete(project_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@api_router.put("/groups/{group_id}/members", tags=["groups"])
-def set_group_members(
-    group_id: str, payload: GroupMembersUpdate, services: Services
+@api_router.put("/projects/{project_id}/members", tags=["projects"])
+def set_project_members(
+    project_id: str, payload: ProjectMembersUpdate, services: Services
 ) -> Any:
-    return services.groups.set_members(
-        group_id,
+    return services.projects.set_members(
+        project_id,
         aweme_ids=payload.aweme_ids,
         account_ids=payload.account_ids,
     )
-
-
-@api_router.put("/groups/{group_id}/data-storers", tags=["groups"])
-def set_group_data_storers(group_id: str, payload: IdList, services: Services) -> Any:
-    return services.groups.set_stores(group_id, payload.ids)
-
-
-@api_router.get("/groups/{group_id}/stores", tags=["groups", "stores"])
-def get_group_stores(group_id: str, services: Services) -> Any:
-    return {
-        "ids": [
-            str(store_id)
-            for store_id in services.groups.store_ids(group_id)
-        ]
-    }
-
-
-@api_router.put("/groups/{group_id}/stores", tags=["groups", "stores"])
-def set_group_stores(group_id: str, payload: IdList, services: Services) -> Any:
-    services.groups.set_stores(group_id, payload.ids)
-    return {"group_id": group_id, "ids": payload.ids}
-
-
-@api_router.get("/store-providers", tags=["stores"])
-def list_store_providers(services: Services) -> Any:
-    return services.store_providers.list()
-
-
-@api_router.get("/stores/defaults", tags=["stores"])
-def list_default_stores(services: Services) -> Any:
-    default_store_ids = services.stores.default_ids()
-    default_ids = set(default_store_ids)
-    return [
-        _store_view(
-            services,
-            services.stores.get(store_id),
-            default_ids=default_ids,
-        )
-        for store_id in default_store_ids
-    ]
-
-
-@api_router.get("/stores", tags=["stores"])
-def list_stores(services: Services, include_disabled: bool = False) -> Any:
-    default_ids = set(services.stores.default_ids())
-    return [
-        _store_view(services, item, default_ids=default_ids)
-        for item in services.stores.list(include_disabled)
-    ]
-
-
-@api_router.post("/stores", status_code=status.HTTP_201_CREATED, tags=["stores"])
-def create_store(payload: StoreCreate, services: Services) -> Any:
-    item = services.stores.add(
-        type=payload.type,
-        name=payload.name,
-        setup_values=payload.values,
-        default=payload.default,
-    )
-    return _store_view(services, item)
-
-
-@api_router.get("/stores/{store_id}", tags=["stores"])
-def get_store(store_id: str, services: Services) -> Any:
-    return _store_view(services, services.stores.get(store_id))
-
-
-@api_router.patch("/stores/{store_id}", tags=["stores"])
-def update_store(store_id: str, payload: StoreUpdate, services: Services) -> Any:
-    item = services.stores.update(
-        store_id,
-        **payload.model_dump(exclude_unset=True),
-    )
-    return _store_view(services, item)
-
-
-@api_router.delete(
-    "/stores/{store_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    tags=["stores"],
-)
-def delete_store(store_id: str, services: Services) -> Response:
-    services.stores.delete(store_id)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@api_router.post("/stores/{store_id}/setup", tags=["stores"])
-def setup_store(store_id: str, payload: StoreSetup, services: Services) -> Any:
-    return services.store_providers.setup(store_id, payload.values)
-
-
-@api_router.get("/stores/{store_id}/status", tags=["stores"])
-def store_status(store_id: str, services: Services) -> Any:
-    return services.stores.status(store_id)
-
-
-@api_router.put("/stores/{store_id}/default", tags=["stores"])
-def set_default_store(store_id: str, services: Services) -> Any:
-    return services.stores.set_default(store_id, True)
-
-
-@api_router.delete("/stores/{store_id}/default", tags=["stores"])
-def unset_default_store(store_id: str, services: Services) -> Any:
-    return services.stores.set_default(store_id, False)
-
-
-@api_router.get("/data-storer-types", tags=["data-storers"])
-def list_data_storer_types(services: Services) -> Any:
-    return services.stores.types()
-
-
-@api_router.get("/data-storers", tags=["data-storers"])
-def list_data_storers(services: Services, include_disabled: bool = False) -> Any:
-    values = services.stores.list()
-    if include_disabled:
-        return values
-    return [
-        item
-        for item in values
-        if _value(getattr(item, "status", "active")) != "disabled"
-    ]
-
-
-@api_router.post(
-    "/data-storers", status_code=status.HTTP_201_CREATED, tags=["data-storers"]
-)
-def create_data_storer(payload: DataStorerCreate, services: Services) -> Any:
-    data = payload.model_dump()
-    for name in (
-        "connection_config",
-        "container_config",
-        "field_mapping",
-        "attachment_policy",
-    ):
-        data[f"{name}_json"] = data.pop(name)
-    return services.stores.create(**data)
-
-
-@api_router.get("/data-storers/{data_storer_id}", tags=["data-storers"])
-def get_data_storer(data_storer_id: str, services: Services) -> Any:
-    return services.stores.get(data_storer_id)
-
-
-@api_router.patch("/data-storers/{data_storer_id}", tags=["data-storers"])
-def update_data_storer(
-    data_storer_id: str, payload: DataStorerUpdate, services: Services
-) -> Any:
-    data = payload.model_dump(exclude_unset=True)
-    for name in (
-        "connection_config",
-        "container_config",
-        "field_mapping",
-        "attachment_policy",
-    ):
-        if name in data:
-            data[f"{name}_json"] = data.pop(name)
-    return services.stores.update(data_storer_id, **data)
-
-
-@api_router.delete(
-    "/data-storers/{data_storer_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    tags=["data-storers"],
-)
-def delete_data_storer(data_storer_id: str, services: Services) -> Response:
-    services.stores.delete(data_storer_id)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@api_router.post("/data-storers/{data_storer_id}/validate", tags=["data-storers"])
-def validate_data_storer(data_storer_id: str, services: Services) -> Any:
-    return services.stores.validate(data_storer_id)
 
 
 @api_router.get("/video-transcriptions", tags=["video-transcriptions"])
@@ -763,13 +981,11 @@ def list_transcriptions(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ) -> Any:
-    values = services.transcriptions.list()
-    if aweme_id:
-        values = [
-            item for item in values if str(getattr(item, "aweme_id", "")) == aweme_id
-        ]
-    return _filtered_page(
-        values, status_value=status_filter, limit=limit, offset=offset
+    return services.transcriptions.list_summaries(
+        status=status_filter,
+        aweme_id=aweme_id,
+        limit=limit,
+        offset=offset,
     )
 
 
@@ -798,6 +1014,14 @@ def get_transcription(transcription_id: str, services: Services) -> Any:
     return services.transcriptions.get(transcription_id)
 
 
+@api_router.get(
+    "/video-transcriptions/{transcription_id}/syncs",
+    tags=["video-transcriptions", "sync"],
+)
+def transcription_syncs(transcription_id: str, services: Services) -> Any:
+    return services.sync.list(transcription_id=transcription_id)
+
+
 @api_router.post(
     "/video-transcriptions/{transcription_id}/retry",
     status_code=status.HTTP_202_ACCEPTED,
@@ -820,10 +1044,15 @@ def list_syncs(
     services: Services,
     aweme_id: str | None = None,
     account_id: str | None = None,
+    transcription_id: str | None = None,
     status_filter: str | None = Query(default=None, alias="status"),
 ) -> Any:
     return _filtered_page(
-        services.sync.list(aweme_id=aweme_id, account_id=account_id),
+        services.sync.list(
+            aweme_id=aweme_id,
+            account_id=account_id,
+            transcription_id=transcription_id,
+        ),
         status_value=status_filter,
     )
 
@@ -836,16 +1065,31 @@ def get_sync(sync_id: str, services: Services) -> Any:
 @api_router.post(
     "/sync/{sync_id}/retry", status_code=status.HTTP_202_ACCEPTED, tags=["sync"]
 )
+@api_router.post(
+    "/syncs/{sync_id}/retry", status_code=status.HTTP_202_ACCEPTED, tags=["sync"]
+)
 def retry_sync(sync_id: str, services: Services) -> Any:
     return services.sync.retry(sync_id)
 
 
+@api_router.post(
+    "/sync/{sync_id}/cancel", status_code=status.HTTP_202_ACCEPTED, tags=["sync"]
+)
+@api_router.post(
+    "/syncs/{sync_id}/cancel", status_code=status.HTTP_202_ACCEPTED, tags=["sync"]
+)
+def cancel_sync(sync_id: str, services: Services) -> Any:
+    return services.sync.cancel(sync_id)
+
+
 @api_router.post("/sync/{sync_id}/enable", tags=["sync"])
+@api_router.post("/syncs/{sync_id}/enable", tags=["sync"])
 def enable_sync(sync_id: str, services: Services) -> Any:
     return services.sync.enable(sync_id)
 
 
 @api_router.post("/sync/{sync_id}/disable", tags=["sync"])
+@api_router.post("/syncs/{sync_id}/disable", tags=["sync"])
 def disable_sync(sync_id: str, services: Services) -> Any:
     return services.sync.disable(sync_id)
 

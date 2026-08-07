@@ -1,18 +1,24 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 from uuid import UUID
 
-from cjdb_collectors.config import SecretSettings
-from cjdb_collectors.models import DataStorer, DataStorerStatus
-from cjdb_collectors.store import (
+from cjdb_collectors.models import Provider
+from cjdb_collectors.domains.store import (
+    BaseStoreProvider,
     StoreProviderRegistry,
-    Storer,
-    StorerIdentity,
+    StoreResult,
 )
-from cjdb_collectors.store.providers import NotionStoreProvider
+from cjdb_collectors.domains.store.providers import NotionStoreProvider
 
 from .base import NotFoundError, SessionFactory, as_uuid, now_utc
+
+_REGISTERED_STORE_NAMESPACES: set[str] = set()
+
+
+def registered_store_namespaces() -> set[str]:
+    return set(_REGISTERED_STORE_NAMESPACES)
 
 
 class StoreProviderService:
@@ -20,119 +26,98 @@ class StoreProviderService:
         self,
         session_factory: SessionFactory,
         registry: StoreProviderRegistry,
-        *,
-        config: Any = None,
-        secrets: SecretSettings | None = None,
     ) -> None:
         self._session = session_factory
         self.registry = registry
-        self.config = config
-        self.secrets = secrets or SecretSettings()
+        _REGISTERED_STORE_NAMESPACES.update(registry._provider_classes)
 
-    def close(self) -> None:
-        self.registry.close()
+    def list(self, provider_types: tuple[str, ...] | list[str] | None = None) -> list[dict]:
+        return self.registry.list(provider_types)
 
-    def list(self) -> list[dict]:
-        return self.registry.list()
-
-    def get_storer(self, store_id: UUID | str) -> Storer:
+    def get_provider(self, provider_id: UUID | str) -> BaseStoreProvider:
         with self._session() as session:
-            item = session.get(DataStorer, as_uuid(store_id))
+            item = session.get(Provider, as_uuid(provider_id))
             if not item:
-                raise NotFoundError("store not found")
-            identity = StorerIdentity(
-                id=item.id,
-                name=item.name,
-                provider_type=item.type,
-            )
-            provider = self.registry.get(item.type)
-            values = self._configured_values(item)
-        return Storer(identity, provider, values)
+                raise NotFoundError("provider not found")
+            return self.registry.get(item.namespace, item.setup_payload_json)
 
-    def setup(
-        self,
-        store_id: UUID | str,
-        values: dict[str, Any],
-    ) -> dict[str, Any]:
-        storer = self.get_storer(store_id)
-        cleaned = storer.provider.setup(values, current=storer.config)
-        if self.config is None:
-            raise RuntimeError("store config is not bound")
-        self.config.patch(
-            {
-                f"stores.{storer.id}.{key}": value
-                for key, value in cleaned.items()
-            }
-        )
-        configured = self.get_storer(storer.id)
-        status = configured.status().model_dump()
+    def status(self, provider_id: UUID | str) -> dict[str, Any]:
         with self._session() as session:
-            item = session.get(DataStorer, configured.id)
-            if item:
-                item.status = (
-                    DataStorerStatus.ACTIVE
-                    if status["ready"]
-                    else DataStorerStatus.NEEDS_ATTENTION
+            item = session.get(Provider, as_uuid(provider_id))
+            if not item:
+                raise NotFoundError("provider not found")
+            provider = self.registry.get(item.namespace, item.setup_payload_json)
+        result = provider.status()
+        with self._session() as session:
+            current = session.get(Provider, item.id)
+            if current is not None:
+                current.status = result.status
+                current.status_message = result.message or current.status_message
+                current.status_payload_json = dict(result.details or {})
+                current.last_checked_at = result.checked_at or now_utc()
+                current.next_check_at = current.last_checked_at + timedelta(
+                    seconds=provider.status_refresh_seconds
                 )
-                item.validation_error = status.get("message")
-                item.last_validated_at = now_utc()
-                session.add(item)
+                session.add(current)
         return {
-            "store": {
-                "id": str(configured.id),
-                "name": configured.name,
-                "type": configured.type,
+            "provider": {
+                "id": str(item.id),
+                "name": item.name,
+                "namespace": item.namespace,
             },
-            **status,
+            **result.model_dump(),
         }
 
-    def status(self, store_id: UUID | str) -> dict[str, Any]:
-        storer = self.get_storer(store_id)
-        return {
-            "store": {
-                "id": str(storer.id),
-                "name": storer.name,
-                "type": storer.type,
-            },
-            **storer.status().model_dump(),
-        }
+    def setup_payload(self, provider_id: UUID | str) -> dict[str, Any]:
+        with self._session() as session:
+            item = session.get(Provider, as_uuid(provider_id))
+            if item is None:
+                raise NotFoundError("provider not found")
+            return dict(item.setup_payload_json or {})
 
-    def _configured_values(self, item: DataStorer) -> dict[str, Any]:
-        values = {
-            **item.connection_config_json,
-            "container": item.container_config_json,
-            "field_mapping": item.field_mapping_json,
-            "attachment_policy": item.attachment_policy_json,
-            "conflict_policy": str(item.conflict_policy.value),
-        }
-        database_id = item.container_config_json.get("database_id")
-        if database_id:
-            values["database_id"] = database_id
-        if item.secret_ref:
-            values["secret_ref"] = item.secret_ref
-            secret = self.secrets.resolve(item.secret_ref)
-            if secret:
-                values["token"] = secret
-                values["secret"] = secret
-        if self.config is not None:
-            try:
-                configured = self.config.get(f"stores.{item.id}")
-            except Exception:
-                configured = {}
-            if isinstance(configured, dict):
-                values.update(configured)
-        return values
+    def persist_setup_result(
+        self,
+        provider_id: UUID | str,
+        setup_payload: dict[str, Any],
+        message: str | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        with self._session() as session:
+            item = session.get(Provider, as_uuid(provider_id))
+            if item is None:
+                raise NotFoundError("provider not found")
+            item.setup_payload_json = dict(setup_payload)
+            item.status = "ready"
+            item.status_message = message or "Store Provider 初始化完成"
+            item.status_payload_json = dict(details or {})
+            session.add(item)
 
+    def persist_setup_failure(self, provider_id: UUID | str, message: str) -> None:
+        with self._session() as session:
+            current = session.get(Provider, as_uuid(provider_id))
+            if current is not None:
+                current.status = "error"
+                current.status_message = message
+                session.add(current)
+
+    def is_ready(self, provider_id: UUID | str) -> bool:
+        with self._session() as session:
+            item = session.get(Provider, as_uuid(provider_id))
+            if item is None:
+                return False
+            return item.status == "ready"
+
+    def get_visit_url(
+        self,
+        provider_id: UUID | str,
+        result: StoreResult,
+    ) -> str | None:
+        return self.get_provider(provider_id).get_visit_url(result)
 
 def build_store_provider_service(
     session_factory: SessionFactory,
-    *,
-    config: Any = None,
-    secrets: SecretSettings | None = None,
 ) -> StoreProviderService:
     return StoreProviderService(
         session_factory,
-        StoreProviderRegistry([NotionStoreProvider()]),
-        config=config,
-        secrets=secrets,
+        StoreProviderRegistry([NotionStoreProvider]),
     )

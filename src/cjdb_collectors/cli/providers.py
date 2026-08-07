@@ -18,6 +18,7 @@ from .output import (
     format_option,
     output_command,
 )
+from cjdb_collectors.services.logger import LogType
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -43,9 +44,15 @@ PROVIDER_TYPE_LABELS = {
     "xiaohongshu_aweme_collect": "小红书数据采集",
     "wechat_channels_aweme_collect": "视频号数据采集",
     "wechat_mp_aweme_collect": "公众号数据采集",
+    "douyin_comment_collect": "抖音评论采集",
     "xiaohongshu_comment_collect": "小红书评论下载",
-    "account_collect": "账号数据采集",
-    "video_transcription": "视频转写",
+    "wechat_channels_comment_collect": "视频号评论采集",
+    "wechat_mp_comment_collect": "公众号评论采集",
+    "douyin_account_collect": "抖音账号采集",
+    "xiaohongshu_account_collect": "小红书账号采集",
+    "wechat_channels_account_collect": "视频号账号采集",
+    "wechat_mp_account_collect": "公众号账号采集",
+    "video_transcription": "视频文字转写",
 }
 
 
@@ -102,6 +109,7 @@ def _provider_status_result(value: dict) -> CLIResult:
             "selected": item.get("selected"),
             "provider": _provider_summary(item.get("provider")),
             "status": item["status"],
+            "ready": item.get("ready", item.get("status") == "ready"),
             "message": item.get("message"),
             "details": item.get("details", {}),
             "checked_at": item.get("checked_at"),
@@ -144,24 +152,11 @@ def _provider_selection_result(catalog: dict) -> CLIResult:
 
 
 def _provider_setup_result(value: dict) -> CLIResult:
-    status = value.get("status") or {}
-    compact = {
-        "type": value.get("type"),
-        "provider": _provider_summary(value.get("provider") or status),
-        "status": {
-            "status": status.get("status"),
-            "message": status.get("message"),
-            "details": status.get("details", {}),
-            "checked_at": status.get("checked_at"),
-            "setup_pid": status.get("setup_pid"),
-        },
-        "logs": value.get("logs", []),
-    }
     return cli_result(
         value,
         view="provider_setup",
-        text_value=compact,
-        json_value=compact,
+        text_value=value,
+        json_value=value,
     )
 
 
@@ -195,7 +190,7 @@ def _setup_requirements(services, provider_type: str) -> dict[str, object]:
     catalog = providers.catalog(
         provider_type,
         include_status=False,
-        include_configuration=True,
+        include_setup_payload=True,
     )
     provider_item = next(
         (
@@ -205,7 +200,7 @@ def _setup_requirements(services, provider_type: str) -> dict[str, object]:
         ),
         None,
     )
-    configuration = (provider_item or {}).get("configuration", {})
+    setup_payload = (provider_item or {}).get("setup_payload", {})
     parameters = (provider_item or {}).get("parameters", [])
     selected_type = catalog.get("type") or provider_type
     return {
@@ -214,8 +209,8 @@ def _setup_requirements(services, provider_type: str) -> dict[str, object]:
         "provider": _provider_summary(provider_item),
         "parameters": parameters,
         "configured_parameters": {
-            parameter["key"]: parameter["key"] in configuration
-            and configuration.get(parameter["key"]) not in (None, "")
+            parameter["key"]: parameter["key"] in setup_payload
+            and setup_payload.get(parameter["key"]) not in (None, "")
             for parameter in parameters
         },
         "example": " ".join(
@@ -252,13 +247,18 @@ def list_items(
 @output_command
 def status(
     provider_type: str | None = typer.Argument(None, metavar="[TYPE]"),
+    refresh: bool = typer.Option(
+        False,
+        "--refresh",
+        help="忽略缓存并重新检查 Provider 状态。",
+    ),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     services = get_services()
     value = (
-        services.providers.status(provider_type)
+        services.providers.status(provider_type, refresh=refresh)
         if provider_type
-        else services.providers.service_status()
+        else services.providers.service_status(refresh=refresh)
     )
     return _provider_status_result(value)
 
@@ -316,13 +316,13 @@ def setup(
         )
 
     namespace = services.providers.selected_namespace(provider_type)
-    log_path = provider_log_path(namespace)
-    with log_path.open("a", encoding="utf-8") as handle:
+    log_path = services.logger.get_log_path(LogType.PROVIDER_SETUP, namespace)
+    with services.logger.open_text_append(log_path) as handle:
         handle.write(
             f"{datetime.now().astimezone().isoformat()} "
             f"开始设置 {provider_type} ({namespace})\n"
         )
-    with log_path.open("a", encoding="utf-8") as handle:
+    with services.logger.open_text_append(log_path) as handle:
         try:
             stderr = (
                 sys.stderr
@@ -346,13 +346,10 @@ def setup(
                 ) from exc
             handle.write(f"设置失败：{exc}\n")
             raise
-    with log_path.open("a", encoding="utf-8") as handle:
-        for line in result.get("logs", []):
-            handle.write(f"{line}\n")
-        status = result.get("status") or {}
-        if status.get("status") != "ready":
+    with services.logger.open_text_append(log_path) as handle:
+        if not result.get("success"):
             handle.write(
-                f"设置失败：{status.get('message') or 'Provider 当前不可用'}\n"
+                f"设置失败：{result.get('message') or 'Provider 初始化失败'}\n"
             )
     return _provider_setup_result(result)
 

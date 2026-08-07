@@ -96,7 +96,15 @@ def output_command(
 ) -> Callable[P, None]:
     @wraps(function)
     def wrapped(*args: P.args, **kwargs: P.kwargs) -> None:
-        result = function(*args, **kwargs)
+        try:
+            result = function(*args, **kwargs)
+        except Exception as exc:
+            from cjdb_collectors.settings import SettingsFileNotFoundError
+
+            if not isinstance(exc, SettingsFileNotFoundError):
+                raise
+            typer.echo(str(exc))
+            raise typer.Exit(1) from exc
         if result is None:
             return
         output_format = kwargs.get("output_format", OutputFormat.TEXT)

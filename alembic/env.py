@@ -6,7 +6,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
-from cjdb_collectors.config import load_settings
+from cjdb_collectors.settings import load_settings
 from cjdb_collectors import models  # noqa: F401
 
 
@@ -17,9 +17,9 @@ if (
 ):
     fileConfig(config.config_file_name, disable_existing_loggers=False)
 
-settings = config.attributes.get("settings") or load_settings()
+runtime_settings = config.attributes.get("settings") or load_settings()
 config.set_main_option(
-    "sqlalchemy.url", f"sqlite:///{settings.app.database_path}"
+    "sqlalchemy.url", f"sqlite:///{runtime_settings.app.database_path}"
 )
 target_metadata = SQLModel.metadata
 

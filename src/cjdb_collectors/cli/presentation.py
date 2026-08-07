@@ -93,13 +93,14 @@ def render_text(data: Any, view: str = "generic") -> str:
         "account_list": _render_account_list,
         "transcription": _render_transcription,
         "transcription_list": _render_transcription_list,
-        "group": _render_group,
-        "group_list": _render_group_list,
+        "project": _render_project,
+        "project_list": _render_project_list,
         "store": _render_store,
         "store_list": _render_store_list,
         "store_type_list": _render_store_type_list,
         "store_status": _render_store_status,
         "store_result": _render_store_result,
+        "setup_result": _render_setup_result,
         "sync": _render_sync,
         "sync_list": _render_sync_list,
         "provider_list": _render_provider_list,
@@ -389,13 +390,15 @@ def _render_transcription_list(data: Any) -> None:
         header.append(
             f" · {float(item.get('progress') or 0) * 100:.0f}%"
         )
+        duration = item.get("duration_seconds")
+        detail = f"尝试 {_number(item.get('attempt_count'))}"
+        if duration is not None:
+            detail += f" · 耗时 {float(duration):.1f}s"
+        detail += f" · 更新时间 {_datetime(item.get('updated_at'))}"
         return [
             header,
             f"来源 {_source(item)}",
-            (
-                f"尝试 {_number(item.get('attempt_count'))}"
-                f" · 更新时间 {_datetime(item.get('updated_at'))}"
-            ),
+            detail,
         ]
 
     _record_list(
@@ -416,6 +419,14 @@ def _render_transcription(data: dict[str, Any]) -> None:
             ("视频文件", data.get("video_path")),
             ("状态", _status(data.get("status"))),
             ("进度", f"{float(data.get('progress') or 0) * 100:.0f}%"),
+            (
+                "耗时",
+                (
+                    f"{float(data.get('duration_seconds')):.1f}s"
+                    if data.get("duration_seconds") is not None
+                    else None
+                ),
+            ),
             ("尝试次数", data.get("attempt_count")),
             ("开始时间", _datetime(data.get("started_at"))),
             ("完成时间", _datetime(data.get("finished_at"))),
@@ -425,7 +436,7 @@ def _render_transcription(data: dict[str, Any]) -> None:
     )
 
 
-def _render_group_list(data: Any) -> None:
+def _render_project_list(data: Any) -> None:
     def render(item: dict[str, Any]) -> list[Any]:
         header = Text(_text(item.get("id")), style="bold")
         header.append(f"  {_text(item.get('name'))} · ")
@@ -438,16 +449,16 @@ def _render_group_list(data: Any) -> None:
         return [header, " · ".join(details)]
 
     _record_list(
-        "分组",
+        "项目",
         data or [],
         render,
-        empty="暂无分组。",
+        empty="暂无项目。",
     )
 
 
-def _render_group(data: dict[str, Any]) -> None:
+def _render_project(data: dict[str, Any]) -> None:
     _details(
-        "分组",
+        "项目",
         [
             ("ID", data.get("id")),
             ("名称", data.get("name")),
@@ -519,7 +530,6 @@ def _render_store(data: dict[str, Any]) -> None:
             ("类型", data.get("type")),
             ("状态", _status(data.get("status"))),
             ("默认 Store", "是" if data.get("default") else "否"),
-            ("冲突策略", data.get("conflict_policy")),
             ("最后检查", _datetime(data.get("last_validated_at"))),
             ("错误", data.get("validation_error")),
         ],
@@ -551,9 +561,9 @@ def _render_store_result(data: dict[str, Any]) -> None:
     _details(
         "写入结果",
         [
-            ("远端记录 ID", data.get("remote_record_id")),
-            ("远端 URL", data.get("remote_url")),
-            ("附件", data.get("remote_attachment")),
+            ("成功", "是" if data.get("success") else "否"),
+            ("说明", data.get("message")),
+            ("成功 Payload", data.get("success_payload")),
         ],
     )
 
@@ -563,6 +573,8 @@ def _sync_subject(item: dict[str, Any]) -> str:
         return f"作品 {item['aweme_id']}"
     if item.get("account_id"):
         return f"账号 {item['account_id']}"
+    if item.get("video_transcription_id"):
+        return f"视频转写 {item['video_transcription_id']}"
     return "—"
 
 
@@ -600,8 +612,7 @@ def _render_sync(data: dict[str, Any]) -> None:
             ("状态", _status(data.get("status"))),
             ("启用", "是" if data.get("enabled") else "否"),
             ("尝试次数", data.get("attempt_count")),
-            ("远端记录 ID", data.get("remote_record_id")),
-            ("远端 URL", data.get("remote_url")),
+            ("成功 Payload", data.get("success_payload_json")),
             ("最后同步", _datetime(data.get("last_synced_at"))),
             ("错误", data.get("error_message")),
         ],
@@ -677,29 +688,18 @@ def _render_provider_selection(data: dict[str, Any]) -> None:
 
 
 def _render_provider_setup(data: dict[str, Any]) -> None:
-    status = data.get("status") or {}
-    provider = data.get("provider") or status
+    _render_setup_result(data)
+
+
+def _render_setup_result(data: dict[str, Any]) -> None:
     _details(
-        "Provider 初始化",
+        "初始化结果",
         [
-            ("服务类型", data.get("type")),
-            ("Provider", provider.get("name")),
-            ("命名空间", provider.get("namespace")),
-            ("状态", _status(status.get("status"))),
-            (
-                "说明",
-                _message(status.get("message"))
-                if status.get("message")
-                else None,
-            ),
+            ("成功", "是" if data.get("success") else "否"),
+            ("说明", _message(data.get("message")) if data.get("message") else None),
+            ("Setup Payload", data.get("setup_payload")),
         ],
     )
-    logs = data.get("logs") or []
-    if logs:
-        console = _console()
-        console.print("日志", style="bold")
-        for line in logs:
-            console.print(f"  {line}")
 
 
 def _render_provider_setup_requirements(data: dict[str, Any]) -> None:
@@ -750,10 +750,37 @@ def _render_provider_setup_requirements(data: dict[str, Any]) -> None:
 
 
 def _render_runtime(data: dict[str, Any]) -> None:
+    if isinstance(data.get("instances"), list):
+        _details(
+            "服务状态",
+            [
+                ("状态", _status(data.get("status"))),
+                ("运行实例", data.get("running")),
+            ],
+        )
+        for item in data["instances"]:
+            endpoint = (
+                f"{item.get('host')}:{item.get('port')}"
+                if item.get("host") and item.get("port")
+                else item.get("name")
+            )
+            _console().print(
+                f"  {endpoint:<24} {_status(item.get('status'))} "
+                f"PID={_text(item.get('pid'))} LOG={_text(item.get('log'))}"
+            )
+        return
     _details(
         "服务状态",
         [
             ("状态", _status(data.get("status"))),
+            (
+                "地址",
+                (
+                    f"{data.get('host')}:{data.get('port')}"
+                    if data.get("host") and data.get("port")
+                    else None
+                ),
+            ),
             ("PID", data.get("pid")),
             ("日志", data.get("log") or data.get("log_path")),
         ],

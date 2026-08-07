@@ -1,0 +1,193 @@
+<template x-teleport="body">
+  <div class="fixed z-50 w-96 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-xl"
+       x-cloak
+       x-show="open"
+       :style="`left:${x}px; top:${y}px`"
+       @mouseenter="keepOpen()"
+       @mouseleave="scheduleClose()">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <p class="text-sm font-semibold text-slate-900">存储 Provider</p>
+        <p class="mt-1 text-xs text-slate-500"
+           x-text="loading ? '正在获取' : `${selectedProviders.length} 个已添加的存储源`"></p>
+      </div>
+      <button type="button"
+              class="btn btn-square btn-ghost btn-sm text-lg"
+              aria-label="添加存储 Provider"
+              title="添加存储 Provider"
+              @click.stop="openManager()">+</button>
+    </div>
+
+    <div class="mt-3 grid min-h-16 place-items-center" x-show="loading">
+      <span class="loading loading-spinner loading-sm text-slate-400"></span>
+    </div>
+
+    <div class="mt-3 space-y-1" x-show="!loading && selectedProviders.length">
+      <template x-for="provider in selectedProviders" :key="provider.provider_id || provider.id">
+        <div class="flex min-h-12 w-full items-center gap-2 rounded-lg px-2 hover:bg-slate-50">
+          <button type="button"
+                  class="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  @click.stop="openManager()">
+            <span class="grid size-8 shrink-0 place-items-center rounded-md bg-slate-100 text-slate-600">
+              <svg class="size-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>
+              </svg>
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium text-slate-900" x-text="provider.name"></span>
+              <span class="block truncate text-xs text-slate-500" x-text="provider.namespace || provider.type || 'Provider'"></span>
+            </span>
+            <span class="badge badge-ghost badge-sm">已添加</span>
+          </button>
+          <button type="button"
+                  class="grid size-8 shrink-0 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-slate-900"
+                  :aria-label="`${provider.name} 运行日志`"
+                  :title="`${provider.name} 运行日志`"
+                  @click.stop="openLogs(provider)">
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <path d="M8 6h11M8 12h11M8 18h11"/>
+              <path d="M4 6h.01M4 12h.01M4 18h.01"/>
+            </svg>
+          </button>
+        </div>
+      </template>
+    </div>
+
+    <button type="button"
+            class="mt-3 flex min-h-16 w-full items-center gap-3 rounded-lg bg-slate-50 px-3 text-left hover:bg-slate-100"
+            x-show="!loading && !selectedProviders.length"
+            @click.stop="openManager()">
+      <span class="grid size-8 shrink-0 place-items-center rounded-md bg-white text-lg text-slate-500 shadow-sm">+</span>
+      <span>
+        <span class="block text-sm font-medium text-slate-900">添加存储 Provider</span>
+        <span class="mt-0.5 block text-xs text-slate-500" x-text="error || '新建或从其他项目导入 Provider'"></span>
+      </span>
+    </button>
+  </div>
+</template>
+
+<script>
+window.storeProviderPopover = window.storeProviderPopover || function storeProviderPopover(subjectType, projectId) {
+  const providerTypes = {
+    aweme: 'store_aweme',
+    account: 'store_account',
+    video_transcription: 'store_video_transcription'
+  };
+  return {
+    subjectType: subjectType || 'aweme',
+    projectId: projectId || '',
+    open: false,
+    loading: false,
+    loaded: false,
+    providers: [],
+    selectedIds: [],
+    error: '',
+    x: 0,
+    y: 0,
+    closeTimer: null,
+    init() {
+      window.addEventListener('store-providers-updated', (event) => {
+        if ((event.detail?.subjectType || '') === this.subjectType) this.load();
+      });
+    },
+    get selectedProviders() {
+      return this.providers.filter((provider) => this.selectedIds.includes(
+        String(provider.provider_id || provider.id)
+      ));
+    },
+    get aggregateStatus() {
+      if (this.loading && !this.loaded) return 'loading';
+      if (this.error) return 'error';
+      if (!this.selectedProviders.length) return 'unconfigured';
+      if (this.selectedProviders.some((provider) => provider.status === 'setting_up')) {
+        return 'setting_up';
+      }
+      if (this.selectedProviders.every((provider) => provider.status === 'ready')) {
+        return 'ready';
+      }
+      if (this.selectedProviders.some((provider) => ['error', 'unavailable', 'needs_attention'].includes(provider.status))) {
+        return 'unavailable';
+      }
+      if (this.selectedProviders.some((provider) => ['unconfigured', 'unknown', 'disabled'].includes(provider.status))) {
+        return 'unconfigured';
+      }
+      return 'error';
+    },
+    get cardClass() {
+      return {
+        ready: 'border-emerald-200',
+        loading: 'border-slate-200',
+        setting_up: 'border-amber-200',
+        unavailable: 'border-red-200',
+        error: 'border-red-200',
+        unconfigured: 'border-slate-200'
+      }[this.aggregateStatus] || 'border-slate-200';
+    },
+    get statusDotClass() {
+      return {
+        ready: 'bg-emerald-500',
+        loading: 'animate-pulse bg-slate-300',
+        setting_up: 'bg-amber-400',
+        unavailable: 'bg-red-500',
+        error: 'bg-red-500',
+        unconfigured: 'bg-slate-300'
+      }[this.aggregateStatus] || 'bg-slate-300';
+    },
+    show(trigger) {
+      window.clearTimeout(this.closeTimer);
+      const rect = trigger.getBoundingClientRect();
+      this.x = Math.max(12, Math.min(rect.left, window.innerWidth - 396));
+      this.y = Math.min(rect.bottom + 10, window.innerHeight - 280);
+      this.open = true;
+      if (!this.loading) this.load();
+    },
+    keepOpen() {
+      window.clearTimeout(this.closeTimer);
+    },
+    scheduleClose() {
+      window.clearTimeout(this.closeTimer);
+      this.closeTimer = window.setTimeout(() => { this.open = false; }, 220);
+    },
+    async load() {
+      const providerType = providerTypes[this.subjectType];
+      if (!providerType || !this.projectId) {
+        return;
+      }
+      this.loading = true;
+      this.error = '';
+      try {
+        const response = await fetch(`/api/v1/providers?type=${encodeURIComponent(providerType)}&project_id=${encodeURIComponent(this.projectId)}`, {
+          headers: { Accept: 'application/json' },
+          credentials: 'same-origin'
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error?.message || result.detail || `HTTP ${response.status}`);
+        this.providers = result.providers || [];
+        this.selectedIds = Array.isArray(result.selected) ? result.selected.map(String) : [];
+        this.loaded = true;
+      } catch (error) {
+        this.error = '暂时无法获取存储 Provider';
+        this.loaded = true;
+      } finally {
+        this.loading = false;
+      }
+    },
+    openManager() {
+      this.open = false;
+      window.dispatchEvent(new CustomEvent('open-store-picker', {
+        detail: { subjectType: this.subjectType }
+      }));
+    },
+    openLogs(provider) {
+      const providerId = provider?.provider_id || provider?.id;
+      if (!providerId) return;
+      window.dispatchEvent(new CustomEvent('open-log-modal', {
+        detail: {
+          title: `${provider.name || '存储 Provider'} 运行日志`,
+          url: `/api/v1/providers/instances/${encodeURIComponent(providerId)}/logs`
+        }
+      }));
+    }
+  };
+};
+</script>

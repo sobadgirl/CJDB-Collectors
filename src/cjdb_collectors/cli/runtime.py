@@ -25,11 +25,15 @@ worker_app = typer.Typer(no_args_is_help=False, help="运行后台调度 Worker�
 
 
 def _runtime_path(name: str, suffix: str) -> Path:
-    from cjdb_collectors.config import load_settings
+    from cjdb_collectors.settings import load_settings
+    from cjdb_collectors.services.logger import LoggerService, LogType
 
     settings = load_settings()
-    base = settings.app.logs_dir if suffix == "log" else settings.app.data_dir
-    path = Path(base) / f"{name}.{suffix}"
+    path = (
+        LoggerService.get_log_path(LogType.RUNTIME, name, settings=settings)
+        if suffix == "log"
+        else Path(settings.app.data_dir) / f"{name}.{suffix}"
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -57,12 +61,145 @@ def _read_pid(name: str) -> int | None:
     return pid
 
 
+def _webui_endpoint(
+    host: str | None = None,
+    port: int | None = None,
+) -> tuple[str, int]:
+    from cjdb_collectors.settings import load_settings
+
+    settings = load_settings()
+    return host or settings.web.host, port or settings.web.port
+
+
+def _webui_name(
+    host: str | None = None,
+    port: int | None = None,
+) -> str:
+    _selected_host, selected_port = _webui_endpoint(host, port)
+    return f"webui-{selected_port}"
+
+
+def _webui_instance_status(
+    name: str,
+    *,
+    host: str | None = None,
+    port: int | None = None,
+) -> dict[str, Any]:
+    pid = _read_pid(name)
+    legacy = False
+    if pid is None and name == _webui_name() and (legacy_pid := _read_pid("webui")):
+        name = "webui"
+        pid = legacy_pid
+        legacy = True
+    return {
+        "name": name,
+        "status": "running" if pid else "stopped",
+        "pid": pid,
+        "host": host,
+        "port": port,
+        "pid_path": str(_pid_path(name)),
+        "log": str(_log_path(name)),
+        **({"legacy": True} if legacy else {}),
+    }
+
+
+def _webui_statuses() -> list[dict[str, Any]]:
+    from cjdb_collectors.settings import load_settings
+
+    settings = load_settings()
+    names = {
+        path.stem
+        for path in settings.app.data_dir.glob("webui*.pid")
+        if path.is_file()
+    }
+    default_host, default_port = _webui_endpoint()
+    names.add(_webui_name(default_host, default_port))
+
+    values: list[dict[str, Any]] = []
+    default_name = _webui_name(default_host, default_port)
+    legacy_pid = _read_pid("webui")
+    for name in sorted(names):
+        if name == "webui":
+            item = _webui_instance_status(
+                name,
+                host=default_host,
+                port=default_port,
+            )
+            item["legacy"] = True
+            values.append(item)
+            continue
+        if name == default_name and legacy_pid and not _read_pid(default_name):
+            continue
+        host = None
+        port = None
+        if name == default_name:
+            host = default_host
+            port = default_port
+        elif name.startswith("webui-"):
+            port_text = name.removeprefix("webui-")
+            if port_text.isdigit():
+                port = int(port_text)
+        values.append(_webui_instance_status(name, host=host, port=port))
+    return [item for item in values if item["pid"] is not None or item["name"] != "webui"]
+
+
+def _start_webui_daemon(
+    host: str | None = None,
+    port: int | None = None,
+    reload: bool = False,
+) -> dict[str, Any]:
+    selected_host, selected_port = _webui_endpoint(host, port)
+    name = _webui_name(selected_host, selected_port)
+    if name == _webui_name() and (pid := _read_pid("webui")):
+        return {
+            "status": "running",
+            "pid": pid,
+            "name": "webui",
+            "host": selected_host,
+            "port": selected_port,
+            "log": str(_log_path("webui")),
+            "legacy": True,
+        }
+    return {
+        **_start_daemon(
+            name,
+            _webui_command(selected_host, selected_port, reload),
+        ),
+        "name": name,
+        "host": selected_host,
+        "port": selected_port,
+    }
+
+
+def _stop_webui_daemon(
+    host: str | None = None,
+    port: int | None = None,
+) -> dict[str, Any]:
+    selected_host, selected_port = _webui_endpoint(host, port)
+    name = _webui_name(selected_host, selected_port)
+    result = _stop_daemon(name)
+    stopped_name = name
+    if result["pid"] is None and name == _webui_name():
+        legacy_result = _stop_daemon("webui")
+        if legacy_result["pid"] is not None:
+            result = legacy_result
+            stopped_name = "webui"
+    return {
+        **result,
+        "name": stopped_name,
+        "host": selected_host,
+        "port": selected_port,
+        "log": str(_log_path(stopped_name)),
+    }
+
+
 def _start_daemon(name: str, command: list[str]) -> dict[str, Any]:
     if pid := _read_pid(name):
         return {"status": "running", "pid": pid, "log": str(_log_path(name))}
     log_path = _log_path(name)
-    log = log_path.open("ab")
-    try:
+    from cjdb_collectors.services.logger import LoggerService
+
+    with LoggerService.open_binary_append(log_path) as log:
         process = subprocess.Popen(
             command,
             stdin=subprocess.DEVNULL,
@@ -71,8 +208,6 @@ def _start_daemon(name: str, command: list[str]) -> dict[str, Any]:
             start_new_session=True,
             close_fds=True,
         )
-    finally:
-        log.close()
     for _ in range(50):
         if process.poll() is not None:
             raise typer.BadParameter(
@@ -112,13 +247,11 @@ def _webui_command(
     port: int | None = None,
     reload: bool = False,
 ) -> list[str]:
-    from cjdb_collectors.config import PROJECT_ROOT
+    from cjdb_collectors.settings import PROJECT_ROOT
 
+    selected_host, selected_port = _webui_endpoint(host, port)
     command = [str(PROJECT_ROOT / "cjdb"), "webui"]
-    if host:
-        command.extend(["--host", host])
-    if port is not None:
-        command.extend(["--port", str(port)])
+    command.extend(["--host", selected_host, "--port", str(selected_port)])
     if reload:
         command.append("--reload")
     return command
@@ -131,22 +264,27 @@ def _run_webui(
 ) -> None:
     import uvicorn
 
-    from cjdb_collectors.config import load_settings
-
     current_pid = os.getpid()
-    if (pid := _read_pid("webui")) and pid != current_pid:
-        raise typer.BadParameter(f"webui is already running (pid {pid})")
-    settings = load_settings()
-    _pid_path("webui").write_text(str(current_pid), encoding="utf-8")
+    selected_host, selected_port = _webui_endpoint(host, port)
+    name = _webui_name(selected_host, selected_port)
+    if name == _webui_name() and (pid := _read_pid("webui")) and pid != current_pid:
+        raise typer.BadParameter(
+            f"webui {selected_host}:{selected_port} is already running (pid {pid})"
+        )
+    if (pid := _read_pid(name)) and pid != current_pid:
+        raise typer.BadParameter(
+            f"webui {selected_host}:{selected_port} is already running (pid {pid})"
+        )
+    _pid_path(name).write_text(str(current_pid), encoding="utf-8")
     try:
         uvicorn.run(
             "cjdb_collectors.main:app",
-            host=host or settings.web.host,
-            port=port or settings.web.port,
+            host=selected_host,
+            port=selected_port,
             reload=reload,
         )
     finally:
-        _pid_path("webui").unlink(missing_ok=True)
+        _pid_path(name).unlink(missing_ok=True)
 
 
 @webui_app.callback(invoke_without_command=True)
@@ -163,10 +301,7 @@ def webui(
         return
     if detach:
         return cli_result(
-            _start_daemon(
-                "webui",
-                _webui_command(host, port, reload),
-            ),
+            _start_webui_daemon(host, port, reload),
             view="runtime",
         )
     _run_webui(host, port, reload)
@@ -183,10 +318,7 @@ def webui_start(
 ) -> CLIResult | None:
     if detach:
         return cli_result(
-            _start_daemon(
-                "webui",
-                _webui_command(host, port, reload),
-            ),
+            _start_webui_daemon(host, port, reload),
             view="runtime",
         )
     _run_webui(host, port, reload)
@@ -195,10 +327,12 @@ def webui_start(
 @webui_app.command("stop")
 @output_command
 def webui_stop(
+    host: str | None = typer.Option(None, "--host"),
+    port: int | None = typer.Option(None, "--port"),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     return cli_result(
-        _stop_daemon("webui"),
+        _stop_webui_daemon(host, port),
         view="runtime",
     )
 
@@ -212,28 +346,45 @@ def webui_restart(
     detach: bool = typer.Option(False, "-d", "--detach"),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult | None:
-    command = _webui_command(host, port, reload)
+    selected_host, selected_port = _webui_endpoint(host, port)
+    name = _webui_name(selected_host, selected_port)
+    command = _webui_command(selected_host, selected_port, reload)
     if detach:
+        _stop_webui_daemon(selected_host, selected_port)
         return cli_result(
-            _restart_daemon("webui", command),
+            _start_daemon(name, command),
             view="runtime",
         )
-    _stop_daemon("webui")
-    _run_webui(host, port, reload)
+    _stop_webui_daemon(selected_host, selected_port)
+    _run_webui(selected_host, selected_port, reload)
 
 
 @webui_app.command("status")
 @output_command
 def webui_status(
+    host: str | None = typer.Option(None, "--host"),
+    port: int | None = typer.Option(None, "--port"),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
-    pid = _read_pid("webui")
+    if host is None and port is None:
+        instances = _webui_statuses()
+        running = [item for item in instances if item["pid"] is not None]
+        return cli_result(
+            {
+                "status": "running" if running else "stopped",
+                "running": len(running),
+                "instances": instances,
+            },
+            view="runtime",
+        )
+    selected_host, selected_port = _webui_endpoint(host, port)
+    name = _webui_name(selected_host, selected_port)
     return cli_result(
-        {
-            "status": "running" if pid else "stopped",
-            "pid": pid,
-            "log": str(_log_path("webui")),
-        },
+        _webui_instance_status(
+            name,
+            host=selected_host,
+            port=selected_port,
+        ),
         view="runtime",
     )
 
@@ -241,13 +392,15 @@ def webui_status(
 @webui_app.command("logs")
 @output_command
 def webui_logs(
+    host: str | None = typer.Option(None, "--host"),
+    port: int | None = typer.Option(None, "--port"),
     follow: bool = typer.Option(False, "-f", "--follow"),
     lines: int = typer.Option(100, "-n", "--lines", min=0),
     timestamps: bool = typer.Option(False, "-t", "--timestamps"),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult | None:
     return show_log_file(
-        _log_path("webui"),
+        _log_path(_webui_name(host, port)),
         follow=follow,
         lines=lines,
         timestamps=timestamps,
@@ -256,13 +409,13 @@ def webui_logs(
 
 
 def _worker_command() -> list[str]:
-    from cjdb_collectors.config import PROJECT_ROOT
+    from cjdb_collectors.settings import PROJECT_ROOT
 
     return [str(PROJECT_ROOT / "cjdb"), "worker"]
 
 
 def _run_worker() -> None:
-    from cjdb_collectors.config import load_settings
+    from cjdb_collectors.settings import load_settings
     from cjdb_collectors.db import migrate_database
     from cjdb_collectors.worker import Worker
 
@@ -377,9 +530,9 @@ def worker_logs(
 @worker_app.command("run-task", hidden=True)
 def worker_run_task(
     worker_task_id: str = typer.Option(..., "--worker-task-id"),
-    config: str | None = typer.Option(None, "--config"),
+    settings_path: str | None = typer.Option(None, "--config"),
 ) -> None:
-    from cjdb_collectors.config import DEFAULT_CONFIG_PATH
+    from cjdb_collectors.settings import DEFAULT_SETTINGS_PATH
     from cjdb_collectors.worker.worker import run_worker_task
 
-    run_worker_task(worker_task_id, config or str(DEFAULT_CONFIG_PATH))
+    run_worker_task(worker_task_id, settings_path or str(DEFAULT_SETTINGS_PATH))

@@ -16,6 +16,12 @@ worker_tasks:
     timeout_seconds: 300
     retry_limit: 3
     retry_delay_seconds: 30
+  account_history_collect:
+    # V1.0 发布隐藏：账号/作者历史采集默认关闭。
+    process_limit: 0
+    timeout_seconds: 900
+    retry_limit: 3
+    retry_delay_seconds: 30
   media_download:
     process_limit: 2
     timeout_seconds: 1800
@@ -27,7 +33,8 @@ worker_tasks:
     retry_limit: 2
     retry_delay_seconds: 60
   comment_collect:
-    process_limit: 4
+    # V1.0 发布隐藏：评论采集默认关闭。
+    process_limit: 0
     timeout_seconds: 600
     retry_limit: 3
     retry_delay_seconds: 30
@@ -36,30 +43,10 @@ worker_tasks:
     timeout_seconds: 600
     retry_limit: 3
     retry_delay_seconds: 30
-providers:
-  selected:
-    douyin_aweme_collect: tikhub
-    xiaohongshu_aweme_collect: tikhub
-    wechat_channels_aweme_collect: tikhub
-    wechat_mp_aweme_collect: tikhub
-    xiaohongshu_comment_collect: tikhub
-    account_collect: http_collector
-    video_transcription: faster_whisper
-  tikhub:
-    api_key: ''
-    base_url: https://api.tikhub.dev
-    timeout_seconds: 30
-  http_collector:
-    api_key: ''
-    base_url: http://localhost:8001
-    timeout_seconds: 10
-  faster_whisper:
-    model: turbo
-    model_dir: ''
-    device: auto
-    language: zh
-stores: {}
 services:
+  media:
+    transcription_download_dir: .data/transcriptions
+    aweme_download_dir: .data/aweme-media
   transcription:
     enabled: true
     engine: faster_whisper
@@ -73,7 +60,7 @@ services:
     browse_roots:
     - ~/Movies
     - ~/Downloads
-    - .data/media
+    - .data/transcriptions
     allowed_video_extensions:
     - avi
     - flv

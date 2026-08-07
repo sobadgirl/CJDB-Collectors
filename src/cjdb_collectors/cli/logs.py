@@ -10,9 +10,9 @@ from .output import CLIResult, OutputFormat
 
 
 def provider_log_path(namespace: str) -> Path:
-    from cjdb_collectors.config import load_settings
+    from cjdb_collectors.services.logger import LoggerService, LogType
 
-    path = Path(load_settings().app.logs_dir) / f"provider-{namespace}.log"
+    path = LoggerService.get_log_path(LogType.PROVIDER_RUNTIME, namespace)
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 

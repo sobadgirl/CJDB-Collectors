@@ -51,11 +51,11 @@ def install_error_handlers(app: FastAPI) -> None:
 
     # Services deliberately do not import FastAPI.  Register their common base
     # exception here so every concrete service error gets the same envelope.
-    from cjdb_collectors.services import ServiceError
+    from cjdb_collectors.exceptions import CJDBError
 
-    @app.exception_handler(ServiceError)
+    @app.exception_handler(CJDBError)
     async def service_error_handler(
-        request: Request, exc: ServiceError
+        request: Request, exc: CJDBError
     ) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
@@ -63,7 +63,7 @@ def install_error_handlers(app: FastAPI) -> None:
                 "error": {
                     "code": exc.code,
                     "message": str(exc),
-                    "details": None,
+                    "details": exc.data,
                 }
             },
         )

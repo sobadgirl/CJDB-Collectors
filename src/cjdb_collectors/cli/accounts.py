@@ -23,14 +23,14 @@ app = typer.Typer(no_args_is_help=True, help="管理对标账号。")
 def add(
     url: str,
     platform: str | None = typer.Option(None, "--platform"),
-    group: list[str] = typer.Option([], "--group"),
+    project: list[str] = typer.Option([], "--project"),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     return cli_result(
         get_services().accounts.create(
             url=url,
             platform=platform,
-            group_ids=group,
+            project_ids=project,
         ),
         view="account",
     )
@@ -39,13 +39,13 @@ def add(
 @app.command("list")
 @output_command
 def list_items(
-    group: list[str] = typer.Option([], "--group"),
+    project: list[str] = typer.Option([], "--project"),
     page: int = typer.Option(1, "--page", min=1),
     size: int = typer.Option(50, "--size", min=1, max=500),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     items = get_services().accounts.list(
-        group_ids=group,
+        project_ids=project,
         limit=size,
         offset=page_offset(page, size),
     )
@@ -56,14 +56,14 @@ def list_items(
 @output_command
 def search(
     keyword: str,
-    group: list[str] = typer.Option([], "--group"),
+    project: list[str] = typer.Option([], "--project"),
     page: int = typer.Option(1, "--page", min=1),
     size: int = typer.Option(50, "--size", min=1, max=500),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     items = get_services().accounts.search(
         keyword,
-        group_ids=group,
+        project_ids=project,
         limit=size,
         offset=page_offset(page, size),
     )
@@ -150,14 +150,14 @@ def awemes(
     return aweme_list_result(items, page=page, size=size)
 
 
-@app.command("set-groups")
+@app.command("set-projects")
 @output_command
-def set_groups(
+def set_projects(
     account_id: str,
-    group: list[str] = typer.Option(..., "--group"),
+    project: list[str] = typer.Option(..., "--project"),
     output_format: OutputFormat = format_option(),
 ) -> CLIResult:
     return cli_result(
-        get_services().accounts.set_groups(account_id, group),
+        get_services().accounts.set_projects(account_id, project),
         view="account",
     )

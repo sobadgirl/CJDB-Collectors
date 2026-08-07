@@ -1,0 +1,283 @@
+{% set preview_images = preview_images if preview_images is defined else [] %}
+{% set detail_comments = record.comments_json if record.comments_json is defined else [] %}
+{% set media_status = (record.media_download_status.value if record.media_download_status.value is defined else record.media_download_status) if tab == "awemes" else none %}
+{% set media_status_display = record.media_download_status_display if record.media_download_status_display is defined else media_status %}
+{% set transcription_status = (current_transcription.status.value if current_transcription and current_transcription.status.value is defined else current_transcription.status if current_transcription else "not_requested") if tab == "awemes" else none %}
+{% set transcription_status_display = current_transcription.status_display if current_transcription else display_task_status("not_requested") %}
+{% set is_video_content = (content_type == "video" or record.video_url) if tab == "awemes" else false %}
+{% set media_dot = "bg-emerald-500" if media_status == "succeeded" else "bg-red-500" if media_status in ["failed", "timeout", "cancelled"] else "bg-amber-400 animate-pulse" if media_status in ["pending", "retry_wait", "running"] else "bg-slate-300" %}
+{% set media_title = "本地媒体已下载" if media_status == "succeeded" else "媒体下载失败" if media_status in ["failed", "timeout"] else "媒体下载已取消" if media_status == "cancelled" else "正在下载媒体" if media_status == "running" else "等待 Worker 下载" if media_status == "pending" else "等待重试下载" if media_status == "retry_wait" else "还没有下载到本地" %}
+<div class="modal modal-open text-left"
+     x-data='{
+       previewMedia: {{ preview_images|tojson }},
+       previewMediaIndex: 0,
+       get previewCurrentMedia() {
+         return this.previewMedia.length ? this.previewMedia[this.previewMediaIndex] : "";
+       },
+       previewNextMedia() {
+         if (this.previewMedia.length > 1) this.previewMediaIndex = (this.previewMediaIndex + 1) % this.previewMedia.length;
+       },
+       previewPreviousMedia() {
+         if (this.previewMedia.length > 1) this.previewMediaIndex = (this.previewMediaIndex + this.previewMedia.length - 1) % this.previewMedia.length;
+       },
+       close() {
+         this.$root.classList.remove("modal-open");
+         window.enableRefresh?.();
+         setTimeout(() => {
+           const root = document.querySelector("#detail-modal-root");
+           if (root) root.innerHTML = "";
+         }, 120);
+       }
+     }'
+     x-init="window.disableRefresh?.()"
+     @keydown.escape.window="close()">
+  <div class="modal-box flex max-h-[calc(100dvh-2rem)] w-[min(78rem,calc(100vw-2rem))] max-w-none flex-col overflow-hidden p-0">
+    <div class="flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-6 py-5">
+      <div class="min-w-0 flex-1">
+        <div class="min-w-0">
+          <p class="text-xs font-medium uppercase text-slate-400">{{ "作品详情" if tab == "awemes" else "账号详情" }}</p>
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-square btn-sm shrink-0" aria-label="关闭详情" @click="close()">
+        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="min-h-0 overflow-y-auto px-6 py-5">
+      {% if tab == "awemes" %}
+      <div class="grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)]">
+        <aside class="min-w-0 space-y-4">
+          <div class="overflow-hidden rounded-lg border border-slate-200 bg-slate-950">
+            {% if record.video_url or record.video_path %}
+            <video class="aspect-[9/16] max-h-[34rem] w-full bg-black object-contain"
+                   controls playsinline preload="metadata"
+                   {% if cover_source %}poster="{{ cover_source }}"{% endif %}
+                   src="{{ media_display_src(record.video_url, record.video_path) }}"></video>
+            {% elif preview_images %}
+            <div class="relative">
+              <img :src="previewCurrentMedia" alt="{{ record.title or '作品预览' }}" class="aspect-[4/5] w-full bg-slate-950 object-contain">
+              {% if preview_images|length > 1 %}
+              <button type="button"
+                      class="absolute left-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white hover:bg-black/65"
+                      aria-label="上一张"
+                      @click.stop="previewPreviousMedia()">
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <button type="button"
+                      class="absolute right-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white hover:bg-black/65"
+                      aria-label="下一张"
+                      @click.stop="previewNextMedia()">
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+              <span class="absolute bottom-2 right-2 rounded bg-black/55 px-1.5 py-0.5 text-[11px] font-medium text-white" x-text="`${previewMediaIndex + 1}/${previewMedia.length}`"></span>
+              {% endif %}
+            </div>
+            {% else %}
+            <div class="grid aspect-[4/5] place-items-center text-slate-400">
+              <div class="text-center">
+                <svg class="mx-auto size-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M4 6h16v12H4z"/><path d="m10 9 5 3-5 3V9Z"/>
+                </svg>
+                <p class="mt-2 text-xs">无封面</p>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+          {% if preview_images|length > 1 %}
+          <div class="flex gap-2 overflow-x-auto pb-1">
+            {% for image in preview_images %}
+            <button type="button"
+                    class="shrink-0 rounded-md border border-slate-200 p-0.5 transition hover:border-slate-400"
+                    :class="{ 'border-slate-900 ring-1 ring-slate-900': previewMediaIndex === {{ loop.index0 }} }"
+                    @click.stop="previewMediaIndex = {{ loop.index0 }}">
+              <img src="{{ image }}" alt="图片 {{ loop.index }}" class="size-14 rounded object-cover">
+            </button>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <section class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <dl class="grid grid-cols-3 gap-3 text-sm">
+              <div class="min-w-0">
+                <dt class="text-xs text-slate-400">平台</dt>
+                <dd class="mt-1 flex min-w-0 items-center gap-1.5 text-slate-700">
+                  <img class="size-4 shrink-0 object-contain" src="{{ platform_logo_src(record.platform) }}" alt="{{ record.platform_display if record.platform_display is defined else display_platform(record.platform) }}">
+                  <span class="truncate">{{ record.platform_display if record.platform_display is defined else display_platform(record.platform) }}</span>
+                </dd>
+              </div>
+              <div class="min-w-0">
+                <dt class="text-xs text-slate-400">类型</dt>
+                <dd class="mt-1 truncate text-slate-700">{{ record.content_type_display if record.content_type_display is defined else display_content_type(content_type) }}</dd>
+              </div>
+              <div class="min-w-0">
+                <dt class="text-xs text-slate-400">采集</dt>
+                <dd class="mt-1 truncate text-slate-700">{{ collection_status_display or "-" }}</dd>
+              </div>
+            </dl>
+          </section>
+          <section class="rounded-lg border border-slate-200 p-4">
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <h4 class="text-sm font-semibold text-slate-900">处理状态</h4>
+              <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                <span class="size-2 rounded-full {{ media_dot }}"></span>
+                {{ media_title }}
+              </span>
+            </div>
+            <dl class="grid gap-2 text-sm">
+              <div class="flex justify-between gap-3"><dt class="text-slate-400">媒体下载</dt><dd class="text-slate-700">{{ media_status_display or "-" }}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-slate-400">视频转写</dt><dd class="text-slate-700">{{ transcription_status_display or "-" }}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-slate-400">转写任务</dt><dd class="truncate text-slate-700">{{ current_transcription.id if current_transcription else "未创建" }}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-slate-400">最近采集</dt><dd class="truncate text-slate-700">{{ record.last_collected_at or "-" }}</dd></div>
+            </dl>
+            {% if record.collection_error or record.media_download_error %}
+            <p class="mt-3 max-h-24 overflow-auto rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ record.collection_error or record.media_download_error }}</p>
+            {% endif %}
+          </section>
+          <section class="rounded-lg border border-slate-200 bg-white">
+            <h4 class="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-900">技术信息</h4>
+            <div class="p-4">
+              <dl class="grid gap-2 text-sm">
+                <div class="min-w-0"><dt class="text-slate-400">作品 URL</dt><dd class="mt-1 break-all text-slate-700">{{ record.aweme_url or record.source_url or "-" }}</dd></div>
+                <div class="min-w-0"><dt class="text-slate-400">作品 ID</dt><dd class="mt-1 break-all font-mono text-xs text-slate-700">{{ record.platform_aweme_id or "-" }}</dd></div>
+                <div class="min-w-0"><dt class="text-slate-400">账号 ID</dt><dd class="mt-1 break-all font-mono text-xs text-slate-700">{{ record.platform_account_id or "-" }}</dd></div>
+                <div class="min-w-0"><dt class="text-slate-400">本地 ID</dt><dd class="mt-1 break-all font-mono text-xs text-slate-700">{{ record.id }}</dd></div>
+                <div class="min-w-0"><dt class="text-slate-400">发布时间</dt><dd class="mt-1 text-slate-700">{{ record.published_at or "-" }}</dd></div>
+                <div class="min-w-0"><dt class="text-slate-400">下载尝试</dt><dd class="mt-1 text-slate-700">{{ record.media_download_attempt_count or 0 }}</dd></div>
+                <div class="min-w-0"><dt class="text-slate-400">本地视频</dt><dd class="mt-1 break-all font-mono text-xs text-slate-700">{{ record.video_path or "-" }}</dd></div>
+              </dl>
+            </div>
+          </section>
+        </aside>
+
+        <div class="min-w-0 space-y-5">
+          <section class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+            <div class="min-w-0">
+              <h3 class="line-clamp-3 text-xl font-semibold leading-7 text-slate-950">{{ record.title or "等待采集" }}</h3>
+            </div>
+            {% if author %}
+            {% set author_location_display = author.location_display if author.location_display is defined else display_location(author.location, author.ip_location) %}
+            {% set author_gender_display = author.gender_display if author.gender_display is defined else display_gender(author.gender) %}
+            {% set author_registered_at_display = author.registered_at_display if author.registered_at_display is defined else display_registered_at(author.extra_data_json) %}
+            <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div class="flex items-center gap-3">
+                {% if author.avatar_url %}
+                <img src="{{ author.avatar_url }}" alt="{{ author.display_name or '作者头像' }}" class="size-10 shrink-0 rounded-full object-cover">
+                {% else %}
+                <span class="grid size-10 shrink-0 place-items-center rounded-full bg-white text-sm font-semibold text-slate-500">{{ (author.display_name or author.platform_account_id or "-")[:1] }}</span>
+                {% endif %}
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-semibold text-slate-950">{{ author.display_name or author.platform_account_id or "-" }}</p>
+                  {% if author_location_display != "-" or author_gender_display != "-" or author_registered_at_display != "-" %}
+                  <p class="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-slate-500">
+                    {% if author_location_display != "-" %}<span class="truncate">{{ author_location_display }}</span>{% endif %}
+                    {% if author_gender_display != "-" %}<span>{{ author_gender_display }}</span>{% endif %}
+                    {% if author_registered_at_display != "-" %}<span>注册 {{ author_registered_at_display }}</span>{% endif %}
+                  </p>
+                  {% endif %}
+                  <p class="mt-1 truncate text-xs text-slate-500">{{ author.following_count_display if author.following_count_display is defined else display_count(author.following_count) }} 关注 · {{ author.follower_count_display if author.follower_count_display is defined else display_count(author.follower_count) }} 粉丝</p>
+                </div>
+                {% if author.profile_url %}
+                <a class="btn btn-xs shrink-0 border-slate-900 bg-slate-900 text-white hover:bg-slate-700"
+                   href="{{ author.profile_url }}"
+                   target="_blank"
+                   rel="noopener noreferrer">打开主页</a>
+                {% else %}
+                <button type="button" class="btn btn-xs shrink-0" disabled>打开主页</button>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+          </section>
+
+          <section>
+            <h4 class="mb-2 text-sm font-semibold text-slate-900">{{ "视频描述" if is_video_content else "正文" }}</h4>
+            <div class="max-h-72 overflow-auto rounded-lg border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-700 whitespace-pre-wrap">{{ record.description or "暂无作品描述。" }}</div>
+            {% if is_video_content and record.transcription_text %}
+            <h4 class="mb-2 mt-5 text-sm font-semibold text-slate-900">视频转写</h4>
+            <div class="max-h-80 overflow-auto rounded-lg border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700 whitespace-pre-wrap">{{ record.transcription_text }}</div>
+            {% endif %}
+          </section>
+
+          <section class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div class="rounded-lg border border-slate-200 px-3 py-3"><p class="text-lg font-semibold text-slate-950">{{ record.play_count if record.play_count is not none else "-" }}</p><p class="text-xs text-slate-400">播放</p></div>
+            <div class="rounded-lg border border-slate-200 px-3 py-3"><p class="text-lg font-semibold text-slate-950">{{ record.like_count if record.like_count is not none else "-" }}</p><p class="text-xs text-slate-400">点赞</p></div>
+            <div class="rounded-lg border border-slate-200 px-3 py-3"><p class="text-lg font-semibold text-slate-950">{{ record.collect_count if record.collect_count is not none else "-" }}</p><p class="text-xs text-slate-400">收藏</p></div>
+            <div class="rounded-lg border border-slate-200 px-3 py-3"><p class="text-lg font-semibold text-slate-950">{{ record.share_count if record.share_count is not none else "-" }}</p><p class="text-xs text-slate-400">转发</p></div>
+            <div class="rounded-lg border border-slate-200 px-3 py-3"><p class="text-lg font-semibold text-slate-950">{{ record.comment_count if record.comment_count is not none else "-" }}</p><p class="text-xs text-slate-400">评论</p></div>
+          </section>
+
+        </div>
+      </div>
+      {% else %}
+      <div class="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <aside class="space-y-4">
+          <div class="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+            {% if record.avatar_url %}
+            <img src="{{ record.avatar_url }}" alt="{{ record.display_name or '账号头像' }}" class="aspect-square w-full object-cover">
+            {% else %}
+            <div class="grid aspect-square place-items-center text-slate-400">
+              <div class="text-center">
+                <svg class="mx-auto size-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M20 21a8 8 0 0 0-16 0"/><path d="M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"/>
+                </svg>
+                <p class="mt-2 text-xs">无头像</p>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+          <section class="rounded-lg border border-slate-200 p-4">
+            <h4 class="mb-3 text-sm font-semibold text-slate-900">账号身份</h4>
+            <dl class="grid gap-2 text-sm">
+              <div><dt class="text-slate-400">平台</dt><dd class="mt-1 text-slate-700">{{ record.platform_display if record.platform_display is defined else display_platform(record.platform) }}</dd></div>
+              <div><dt class="text-slate-400">主页</dt><dd class="mt-1 break-all text-slate-700">{{ record.profile_url or "-" }}</dd></div>
+              <div><dt class="text-slate-400">平台 ID</dt><dd class="mt-1 break-all font-mono text-xs text-slate-700">{{ record.platform_account_id or "-" }}</dd></div>
+              <div><dt class="text-slate-400">地区</dt><dd class="mt-1 text-slate-700">{{ record.location or record.ip_location or "-" }}</dd></div>
+            </dl>
+          </section>
+          <section class="rounded-lg border border-slate-200 bg-white">
+            <h4 class="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-900">技术信息</h4>
+            <div class="p-4">
+              <dl class="grid gap-2 text-sm">
+                <div class="min-w-0"><dt class="text-slate-400">本地 ID</dt><dd class="mt-1 break-all font-mono text-xs text-slate-700">{{ record.id }}</dd></div>
+                <div class="min-w-0"><dt class="text-slate-400">采集状态</dt><dd class="mt-1 text-slate-700">{{ collection_status_display or "-" }}</dd></div>
+                <div class="min-w-0"><dt class="text-slate-400">点赞</dt><dd class="mt-1 text-slate-700">{{ record.like_count if record.like_count is not none else "-" }}</dd></div>
+                <div class="min-w-0"><dt class="text-slate-400">收藏</dt><dd class="mt-1 text-slate-700">{{ record.collect_count if record.collect_count is not none else "-" }}</dd></div>
+                <div class="min-w-0"><dt class="text-slate-400">评论</dt><dd class="mt-1 text-slate-700">{{ record.comment_count if record.comment_count is not none else "-" }}</dd></div>
+                <div class="min-w-0"><dt class="text-slate-400">最近采集</dt><dd class="mt-1 text-slate-700">{{ record.last_collected_at or "-" }}</dd></div>
+              </dl>
+              {% if record.extra_data_json %}
+              <details class="mt-4 rounded-md bg-slate-950">
+                <summary class="cursor-pointer px-3 py-2 text-xs font-medium text-slate-100">原始平台数据</summary>
+                <pre class="max-h-96 overflow-auto px-3 pb-3 text-xs leading-5 text-slate-100">{{ record.extra_data_json|tojson }}</pre>
+              </details>
+              {% endif %}
+            </div>
+          </section>
+        </aside>
+
+        <div class="min-w-0 space-y-5">
+          <section class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div class="rounded-lg border border-slate-200 px-3 py-3"><p class="text-lg font-semibold text-slate-950">{{ record.follower_count_display if record.follower_count_display is defined else display_count(record.follower_count) }}</p><p class="text-xs text-slate-400">粉丝</p></div>
+            <div class="rounded-lg border border-slate-200 px-3 py-3"><p class="text-lg font-semibold text-slate-950">{{ record.total_favorited if record.total_favorited is not none else record.like_count if record.like_count is not none else "-" }}</p><p class="text-xs text-slate-400">获赞收藏</p></div>
+            <div class="rounded-lg border border-slate-200 px-3 py-3"><p class="text-lg font-semibold text-slate-950">{{ record.work_count if record.work_count is not none else "-" }}</p><p class="text-xs text-slate-400">作品</p></div>
+            <div class="rounded-lg border border-slate-200 px-3 py-3"><p class="text-lg font-semibold text-slate-950">{{ record.following_count_display if record.following_count_display is defined else display_count(record.following_count) }}</p><p class="text-xs text-slate-400">关注</p></div>
+            <div class="rounded-lg border border-slate-200 px-3 py-3"><p class="text-lg font-semibold text-slate-950">{{ record.last_collected_at or "-" }}</p><p class="text-xs text-slate-400">最近采集</p></div>
+          </section>
+
+          {% if record.signature %}
+          <section>
+            <h4 class="mb-2 text-sm font-semibold text-slate-900">账号简介</h4>
+            <p class="rounded-lg border border-slate-200 p-4 text-sm leading-6 text-slate-700 whitespace-pre-wrap">{{ record.signature }}</p>
+          </section>
+          {% endif %}
+
+          {% include "partials/account_history.html" %}
+
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="modal-backdrop" @click="close()"></div>
+</div>
